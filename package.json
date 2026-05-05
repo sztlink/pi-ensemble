@@ -1,0 +1,48 @@
+{
+  "name": "@sztlink/pi-ensemble",
+  "version": "0.1.0-alpha.0",
+  "description": "Shared workspace coordination for parallel coding agents",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sztlink/pi-ensemble.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sztlink/pi-ensemble/issues"
+  },
+  "homepage": "https://github.com/sztlink/pi-ensemble#readme",
+  "bin": {
+    "ensemble": "bin/ensemble.mjs"
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "coding-workflow",
+    "agents",
+    "coordination",
+    "blackboard"
+  ],
+  "license": "MIT",
+  "pi": {
+    "extensions": ["./extensions"]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "extensions/",
+    "docs/",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE",
+    "package.json"
+  ]
+}

@@ -1,0 +1,82 @@
+# pi-ensemble
+
+Shared workspace coordination for parallel coding agents.
+
+`pi-ensemble` is a small local blackboard + mailbox protocol for developers who run multiple coding agents side by side. It is designed for Pi, Claude Code, Codex, or any terminal agent that can read and write files.
+
+It is **not** a daemon, process supervisor, remote-control system, or agent auto-runner.
+
+## Why
+
+When multiple coding agents work in parallel, the human becomes the relay: copy message here, paste result there, remember who owns which worktree. `pi-ensemble` turns that relay into a transparent local file protocol:
+
+```txt
+.pi-ensemble/
+  config.yaml
+  blackboard.md
+  agents/<name>/inbox.md
+  agents/<name>/state.json
+  worktrees.json
+  audit.jsonl
+```
+
+Files are the protocol. If the tool disappears, the state is still readable.
+
+## Install
+
+Not published yet. Local development only:
+
+```bash
+cd /path/to/repo
+pi install /absolute/path/to/pi-ensemble
+```
+
+Or use the CLI directly:
+
+```bash
+node /absolute/path/to/pi-ensemble/bin/ensemble.mjs init
+```
+
+## CLI
+
+```bash
+ensemble init [--agent pi]
+ensemble status
+ensemble note "message" [--from pi]
+ensemble send claude "handoff" [--from pi] [--type handoff]
+ensemble inbox [--agent pi] [--no-clear]
+ensemble board
+ensemble claim ./worktree-or-path [--agent pi]
+ensemble release ./worktree-or-path [--agent pi]
+```
+
+Allowed message types: `note`, `handoff`, `question`, `result`, `ack`.
+
+## Pi commands
+
+When installed as a Pi package, the extension exposes:
+
+```txt
+/ensemble init
+/ensemble status
+/ensemble note <message>
+/ensemble send <agent> <message> [--type note|handoff|question|result|ack]
+/ensemble inbox
+/ensemble board
+/ensemble claim <path>
+/ensemble release <path>
+```
+
+It also exposes an `ensemble` tool for the parent agent to perform the same file-only operations.
+
+## v0.1 boundaries
+
+See [`SECURITY.md`](SECURITY.md). In short: no network, no spawning, no command execution, no credentials, no hidden persistence, no remote sessions, no automatic routing.
+
+## Relationship to existing workflows
+
+`pi-ensemble` generalizes a simple bridge pattern: blackboard for durable shared facts, inboxes for handoffs, audit log for traceability. Integrations with tmux, watchers, or external dashboards should remain outside v0.1.
+
+## Repository decision
+
+Recommended public home: `sztlink/pi-ensemble` as a standalone repository, not inside a benchmark or application repo. The protocol is generic and should not inherit TurboQuant-specific context.
