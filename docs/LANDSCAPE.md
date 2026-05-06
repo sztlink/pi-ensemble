@@ -432,19 +432,21 @@ A diferença que talvez precise entrar nos docs:
 
 ---
 
-# Próximo passo sugerido
+# Atualização — 2026-05-06
 
-Criar no repo local:
+Uma busca nova confirmou que o campo está se movendo rápido em direção a agent teams e file-based coordination.
 
-```txt
-/home/aya/implante/tools/pi-ensemble/docs/LANDSCAPE.md
-```
+Novos sinais relevantes:
 
-Conteúdo curto:
+- **Claude Code Agent Teams oficial** — Claude Code já documenta coordenação de múltiplas sessões com task coordination, messaging e limitações conhecidas de retomada/coordenação/shutdown.
+- **openedclaude/claude-reviews-claude** — leitura arquitetural do sistema de agent swarms do Claude Code, incluindo mailbox file-based e lockfile concurrency.
+- **ComposioHQ/agent-orchestrator#853** — issue propondo substituir tmux messaging por protocolo file-based JSONL; tmux ficaria para lifecycle/acesso humano.
+- **internet-dot/agent-message-queue** — AMQ como bus local file-based estilo Maildir para agent sessions/adapters; não tenta controlar task decomposition nem scheduler.
+- **initech / cccc / wave orchestrator** — exemplos de uma camada mais alta de terminal/IPC/dashboard/control plane surgindo por cima do mesmo problema.
+- **novas extensões Pi agent-teams/coordinator** — reforçam que o ecossistema Pi também quer modo maestro/worker, mas frequentemente via spawn/RPC/subagentes.
 
-- existing tools;
-- what they solve;
-- what pi-ensemble intentionally does not solve;
-- why file-only matters.
+Conclusão da atualização:
 
-Depois revisar `README.md` para posicionar o projeto como complemento, não concorrente.
+> O diferencial do `pi-ensemble` ficou mais claro: ele deve continuar menor do que os orchestrators. O valor é ser o substrato local legível que pode conviver com Claude Agent Teams, tmux launchers, Pi coordinators, dashboards e message queues.
+
+O roadmap derivado está em [`ROADMAP.md`](ROADMAP.md).
