@@ -24,7 +24,7 @@ Files are the protocol. If the tool disappears, the state is still readable.
 
 ## Quickstart
 
-See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for Pi, Claude Code/Agent Teams, generic CLI, and tmux adapter examples.
+See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for the shortest path. See [`docs/CLAUDE_AGENT_TEAMS.md`](docs/CLAUDE_AGENT_TEAMS.md) and [`docs/RUNTIME_RECIPES.md`](docs/RUNTIME_RECIPES.md) for interop patterns.
 
 ## Install
 

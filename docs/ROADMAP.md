@@ -157,6 +157,8 @@ A tmux bridge, a dashboard, and a Claude-side helper can all interoperate with t
 
 Goal: make `pi-ensemble` useful beside Agent Teams instead of against it.
 
+Status: first docs/examples landed in `docs/CLAUDE_AGENT_TEAMS.md` and `examples/claude-agent-teams-lead.md`.
+
 Deliverables:
 
 - Document the recommended pattern:

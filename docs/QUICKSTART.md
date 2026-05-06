@@ -95,7 +95,9 @@ Pi also gets an `ensemble` tool with the same core actions.
 
 ## Claude Code / Agent Teams usage
 
-Claude Code can participate through the CLI. Recommended lead-session pattern:
+Claude Code can participate through the CLI. See [`CLAUDE_AGENT_TEAMS.md`](CLAUDE_AGENT_TEAMS.md) for the full lead-session pattern.
+
+Recommended lead-session commands:
 
 ```bash
 cd ~/implante
