@@ -1,6 +1,6 @@
 {
   "name": "@sztlink/pi-ensemble",
-  "version": "0.1.0-alpha.6",
+  "version": "0.1.0-alpha.7",
   "description": "Shared workspace coordination for parallel coding agents",
   "type": "module",
   "repository": {
@@ -47,6 +47,7 @@
     "examples/",
     "README.md",
     "SECURITY.md",
+    "CHANGELOG.md",
     "LICENSE",
     "package.json"
   ]

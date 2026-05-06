@@ -30,17 +30,37 @@ See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for the shortest path. See [`docs
 
 ## Install
 
-Not published yet. Local development only:
+### Pi package from GitHub
+
+```bash
+pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.7
+```
+
+Reload Pi or start a new session, then run:
+
+```txt
+/ensemble status
+```
+
+### Local development
 
 ```bash
 cd /path/to/repo
 pi install /absolute/path/to/pi-ensemble
 ```
 
-Or use the CLI directly:
+### CLI only
 
 ```bash
 node /absolute/path/to/pi-ensemble/bin/ensemble.mjs init
+```
+
+### npm
+
+The npm package is not published yet. Once published:
+
+```bash
+pi install npm:@sztlink/pi-ensemble@alpha
 ```
 
 ## CLI
