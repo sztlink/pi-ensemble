@@ -22,6 +22,10 @@ When multiple coding agents work in parallel, the human becomes the relay: copy 
 
 Files are the protocol. If the tool disappears, the state is still readable.
 
+## Quickstart
+
+See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for Pi, Claude Code/Agent Teams, generic CLI, and tmux adapter examples.
+
 ## Install
 
 Not published yet. Local development only:
@@ -46,8 +50,8 @@ ensemble note "message" [--from pi]
 ensemble send claude "handoff" [--from pi] [--type handoff]
 ensemble inbox [--agent pi] [--no-clear]
 ensemble board
-ensemble claim ./worktree-or-path [--agent pi]
-ensemble release ./worktree-or-path [--agent pi]
+ensemble claim ./worktree-or-path [--agent pi] [--force] [--json]
+ensemble release ./worktree-or-path [--agent pi] [--force] [--json]
 ```
 
 Allowed message types: `note`, `handoff`, `question`, `result`, `ack`.

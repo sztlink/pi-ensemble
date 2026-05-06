@@ -1,6 +1,6 @@
 {
   "name": "@sztlink/pi-ensemble",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Shared workspace coordination for parallel coding agents",
   "type": "module",
   "repository": {
@@ -13,6 +13,10 @@
   "homepage": "https://github.com/sztlink/pi-ensemble#readme",
   "bin": {
     "ensemble": "bin/ensemble.mjs"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/ensemble.mjs && npm test"
   },
   "keywords": [
     "pi-package",

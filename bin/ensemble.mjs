@@ -18,12 +18,12 @@ function usage() {
 Usage:
   ensemble init [--agent NAME]
   ensemble status
-  ensemble note MESSAGE [--from NAME]
-  ensemble send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack]
-  ensemble inbox [--agent NAME] [--no-clear]
-  ensemble board
-  ensemble claim PATH [--agent NAME]
-  ensemble release PATH [--agent NAME]
+  ensemble note MESSAGE [--from NAME] [--json]
+  ensemble send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--json]
+  ensemble inbox [--agent NAME] [--no-clear] [--json]
+  ensemble board [--json]
+  ensemble claim PATH [--agent NAME] [--force] [--json]
+  ensemble release PATH [--agent NAME] [--force] [--json]
 `);
 }
 
@@ -46,6 +46,10 @@ function root() {
   return requireWorkspaceRoot(process.cwd());
 }
 
+function printJson(value) {
+  console.log(JSON.stringify(value, null, 2));
+}
+
 try {
   const args = process.argv.slice(2);
   const cmd = args.shift() || 'help';
@@ -57,35 +61,45 @@ try {
     console.log(`initialized ${r.dir} (agent: ${r.agent})`);
   } else if (cmd === 'status') {
     const s = status(root());
-    console.log(JSON.stringify(s, null, 2));
+    printJson(s);
   } else if (cmd === 'note') {
     const from = takeFlag(args, '--from', defaultAgent());
+    const json = hasFlag(args, '--json');
     const body = args.join(' ');
-    note(root(), { from, body });
-    console.log('noted');
+    const result = note(root(), { from, body });
+    json ? printJson(result) : console.log('noted');
   } else if (cmd === 'send') {
     const from = takeFlag(args, '--from', defaultAgent());
     const type = takeFlag(args, '--type', 'handoff');
+    const json = hasFlag(args, '--json');
     const to = args.shift();
     const body = args.join(' ');
-    send(root(), { from, to, type, body });
-    console.log(`sent to ${to}`);
+    const result = send(root(), { from, to, type, body });
+    json ? printJson(result) : console.log(`sent to ${to}`);
   } else if (cmd === 'inbox') {
     const agent = takeFlag(args, '--agent', defaultAgent());
     const noClear = hasFlag(args, '--no-clear');
-    process.stdout.write(readInbox(root(), { agent, clear: !noClear }));
+    const json = hasFlag(args, '--json');
+    const content = readInbox(root(), { agent, clear: !noClear });
+    json ? printJson({ agent, clear: !noClear, content }) : process.stdout.write(content);
   } else if (cmd === 'board') {
-    process.stdout.write(readBoard(root()));
+    const json = hasFlag(args, '--json');
+    const content = readBoard(root());
+    json ? printJson({ content }) : process.stdout.write(content);
   } else if (cmd === 'claim') {
     const agent = takeFlag(args, '--agent', defaultAgent());
+    const force = hasFlag(args, '--force');
+    const json = hasFlag(args, '--json');
     const targetPath = args.join(' ');
-    claim(root(), { agent, targetPath });
-    console.log(`claimed ${targetPath}`);
+    const result = claim(root(), { agent, targetPath, force });
+    json ? printJson(result) : console.log(`claimed ${targetPath}`);
   } else if (cmd === 'release') {
     const agent = takeFlag(args, '--agent', defaultAgent());
+    const force = hasFlag(args, '--force');
+    const json = hasFlag(args, '--json');
     const targetPath = args.join(' ');
-    release(root(), { agent, targetPath });
-    console.log(`released ${targetPath}`);
+    const result = release(root(), { agent, targetPath, force });
+    json ? printJson(result) : console.log(`released ${targetPath}`);
   } else {
     usage();
     process.exitCode = 2;

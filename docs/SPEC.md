@@ -13,6 +13,10 @@ A local, file-based coordination protocol for parallel coding agents operated by
 - Secrets management
 - Multi-user collaboration
 
+## Protocol version
+
+`config.yaml` stores `version: 1`. v0.1 treats this as the file-protocol version.
+
 ## Directory layout
 
 ```txt
@@ -28,6 +32,16 @@ A local, file-based coordination protocol for parallel coding agents operated by
   audit.jsonl
 ```
 
+## Agent names
+
+Agent names must match:
+
+```txt
+^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$
+```
+
+Examples: `pi`, `claude`, `claude-lead`, `codex.1`.
+
 ## Message types
 
 - `note`: durable shared observation
@@ -36,6 +50,22 @@ A local, file-based coordination protocol for parallel coding agents operated by
 - `result`: completed output or artifact pointer
 - `ack`: acknowledgement / receipt
 
+## Claims
+
+`worktrees.json` maps resolved paths to current owner metadata:
+
+```json
+{
+  "/repo/src/foo.ts": { "agent": "claude", "since": "..." }
+}
+```
+
+A path claimed by another agent cannot be overwritten or released unless the caller uses a force override. Overrides are audited and keep the previous owner in the audit record.
+
+## Machine-readable output
+
+The CLI supports `--json` for operations that adapters commonly consume: `note`, `send`, `inbox`, `board`, `claim`, and `release`. `status` is JSON by default.
+
 ## Invariants
 
 1. All state is human-readable.
@@ -43,6 +73,7 @@ A local, file-based coordination protocol for parallel coding agents operated by
 3. The package never starts processes or runs shell commands.
 4. The package never opens network connections.
 5. Deleting `.pi-ensemble/` fully resets the protocol.
+6. Adapters may wake or visualize runtimes, but the durable source of truth remains `.pi-ensemble/`.
 
 ## Pi package surface
 

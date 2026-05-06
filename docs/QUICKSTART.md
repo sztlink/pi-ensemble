@@ -1,0 +1,124 @@
+# pi-ensemble quickstart
+
+`pi-ensemble` is a local coordination ledger for coding agents. It does not start agents or move work between machines. It only writes readable files under `.pi-ensemble/`.
+
+## 1. Initialize a workspace
+
+```bash
+cd /path/to/project
+ensemble init --agent pi
+ensemble status
+```
+
+This creates:
+
+```txt
+.pi-ensemble/
+  config.yaml
+  blackboard.md
+  agents/pi/inbox.md
+  agents/pi/state.json
+  worktrees.json
+  audit.jsonl
+```
+
+## 2. Record a durable fact
+
+```bash
+ensemble note "Decision: Pi is coordinating; Claude lead will run Agent Teams internally." --from pi
+ensemble board
+```
+
+Use the blackboard for facts that should outlive terminal scrollback.
+
+## 3. Send a handoff
+
+```bash
+ensemble send claude-lead \
+  "Please run a three-teammate Agent Teams review. Mirror only final findings back here." \
+  --from pi \
+  --type handoff
+```
+
+The receiver reads:
+
+```bash
+ensemble inbox --agent claude-lead --no-clear
+```
+
+When the receiver is done:
+
+```bash
+ensemble send pi "Result: findings saved at docs/review.md" --from claude-lead --type result
+```
+
+## 4. Claim paths before concurrent work
+
+```bash
+ensemble claim lib/core.mjs --agent claude-lead
+```
+
+If another agent tries to claim the same path, `pi-ensemble` fails unless `--force` is used:
+
+```bash
+ensemble claim lib/core.mjs --agent pi
+# Path already claimed by claude-lead...
+```
+
+Release when done:
+
+```bash
+ensemble release lib/core.mjs --agent claude-lead
+```
+
+## 5. JSON mode for adapters
+
+Adapters can use JSON output:
+
+```bash
+ensemble inbox --agent pi --no-clear --json
+ensemble claim docs/ROADMAP.md --agent pi --json
+```
+
+## Pi usage
+
+After installing as a Pi package and reloading Pi:
+
+```txt
+/ensemble status
+/ensemble note durable fact
+/ensemble send claude-lead handoff text --type handoff
+/ensemble inbox
+```
+
+Pi also gets an `ensemble` tool with the same core actions.
+
+## Claude Code / Agent Teams usage
+
+Claude Code can participate through the CLI. Recommended lead-session pattern:
+
+```bash
+cd ~/implante
+ensemble status
+ensemble inbox --agent claude-lead --no-clear
+ensemble claim <path> --agent claude-lead
+ensemble note "Claude lead spawned Agent Teams internally; durable milestone only." --from claude-lead
+ensemble send pi "Result pointer: <path/url>" --from claude-lead --type result
+```
+
+Keep internal Agent Teams chatter inside Claude. Mirror only durable milestones, ownership, and outcomes into `pi-ensemble`.
+
+## tmux wake adapter
+
+If `ensemble-tmux` is available, use it only to wake panes:
+
+```bash
+ensemble-tmux send claude-lead "New handoff in inbox" --from pi --type handoff
+```
+
+Rule:
+
+```txt
+long message -> .pi-ensemble inbox
+short wake ping -> tmux
+```

@@ -114,6 +114,7 @@ export default function (pi: ExtensionAPI) {
       body: Type.Optional(Type.String({ description: "Message body" })),
       path: Type.Optional(Type.String({ description: "Path to claim or release" })),
       clear: Type.Optional(Type.Boolean({ description: "Clear inbox after reading", default: true })),
+      force: Type.Optional(Type.Boolean({ description: "Override claim ownership conflicts", default: false })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       try {
@@ -129,8 +130,8 @@ export default function (pi: ExtensionAPI) {
         else if (params.action === "send") result = send(root, { from: agent, to: params.to, type: params.type || "handoff", body: params.body || "" });
         else if (params.action === "inbox") result = readInbox(root, { agent, clear: params.clear !== false });
         else if (params.action === "board") result = readBoard(root);
-        else if (params.action === "claim") result = claim(root, { agent, targetPath: params.path });
-        else if (params.action === "release") result = release(root, { agent, targetPath: params.path });
+        else if (params.action === "claim") result = claim(root, { agent, targetPath: params.path, force: params.force === true });
+        else if (params.action === "release") result = release(root, { agent, targetPath: params.path, force: params.force === true });
         return { content: [{ type: "text", text: asText(result) }], details: { result } };
       } catch (err) {
         return { content: [{ type: "text", text: err instanceof Error ? err.message : String(err) }], isError: true };
