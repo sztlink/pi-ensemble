@@ -38,7 +38,7 @@ Claude can use the CLI directly:
 
 ```bash
 ensemble inbox --agent claude-lead --since-last-read
-ensemble send pi "Ack: received" --from claude-lead --type ack
+ensemble ack msg_xxx --from claude-lead --body "received"
 ensemble claim src/foo.ts --agent claude-lead
 ensemble note "Started Agent Teams review for src/foo.ts" --from claude-lead
 ensemble send pi "Result: findings at docs/foo-review.md" --from claude-lead --type result

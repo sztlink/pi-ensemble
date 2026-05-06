@@ -59,6 +59,9 @@ When the receiver is done:
 
 ```bash
 ensemble send pi "Result: findings saved at docs/review.md" --from claude-lead --type result
+# Optional lifecycle trace:
+ensemble ack msg_xxx --from claude-lead --body "received"
+ensemble done msg_xxx --from pi --body "resolved"
 ```
 
 ## 4. Claim paths before concurrent work
@@ -90,6 +93,7 @@ ensemble claim docs/ROADMAP.md --agent pi --json
 ensemble claims --json
 ensemble audit --limit 20 --json
 ensemble timeline --limit 20
+ensemble messages --open
 ensemble overview
 ensemble doctor
 ```

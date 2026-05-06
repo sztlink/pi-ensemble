@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.1.0-alpha.11
+
+- Added lightweight message lifecycle without adding orchestration:
+  - generated message ids on `ensemble send`;
+  - inbox headers include `{#msg_...}` anchors;
+  - new `ensemble ack MESSAGE_ID` audit event;
+  - new `ensemble done MESSAGE_ID` resolution audit event;
+  - new `ensemble messages [--open]` read-only lifecycle view;
+  - `overview` includes recent open messages.
+- Added matching Pi command/tool actions and tests.
+
 ## v0.1.0-alpha.10
 
 - Added `ensemble doctor` read-only ledger health checks:

@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 import {
+  ack,
   claim,
   claims,
   defaultAgent,
   doctor,
+  done,
   init,
+  messages,
   note,
   overview,
   readAudit,
@@ -25,6 +28,9 @@ Usage:
   ensemble [--root PATH] status
   ensemble note MESSAGE [--from NAME] [--json]
   ensemble send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--json]
+  ensemble ack MESSAGE_ID [--from NAME] [--body TEXT] [--json]
+  ensemble done MESSAGE_ID [--from NAME] [--body TEXT] [--json]
+  ensemble messages [--limit N] [--open] [--json]
   ensemble inbox [--agent NAME] [--no-clear] [--since-last-read] [--clear] [--json]
   ensemble board [--json]
   ensemble claims [--json]
@@ -79,9 +85,15 @@ function formatOverview(value) {
   lines.push(`retained: ${value.stale.map(a => a.agent).join(', ') || 'none'}`);
   lines.push(`claims: ${value.claims.length}`);
   for (const claim of value.claims) lines.push(`  - ${claim.agent}: ${claim.path}`);
+  lines.push(`open messages: ${value.openMessages.length}`);
+  for (const message of value.openMessages) lines.push(`  - ${message.messageId}: ${message.from} → ${message.to} [${message.type}] ${message.status}`);
   lines.push('recent:');
   for (const row of value.recent) lines.push(`  - ${row.ts ?? '?'} ${row.action ?? '?'} — ${row.summary}`);
   return lines.join('\n') + '\n';
+}
+
+function formatMessages(rows) {
+  return rows.map(row => `${row.messageId} ${row.status} — ${row.from ?? '?'} → ${row.to ?? '?'} [${row.type ?? '?'}]${row.doneBy ? ` done by ${row.doneBy}` : ''}`).join('\n') + (rows.length ? '\n' : '');
 }
 
 function formatDoctor(value) {
@@ -124,7 +136,27 @@ try {
     const to = args.shift();
     const body = args.join(' ');
     const result = send(root(), { from, to, type, body });
-    json ? printJson(result) : console.log(`sent to ${to}`);
+    json ? printJson(result) : console.log(`sent to ${to}: ${result.messageId}`);
+  } else if (cmd === 'ack') {
+    const from = takeFlag(args, '--from', defaultAgent());
+    const body = takeFlag(args, '--body', '');
+    const json = hasFlag(args, '--json');
+    const messageId = args.shift();
+    const result = ack(root(), { from, messageId, body: body || args.join(' ') });
+    json ? printJson(result) : console.log(`acked ${messageId}`);
+  } else if (cmd === 'done') {
+    const from = takeFlag(args, '--from', defaultAgent());
+    const body = takeFlag(args, '--body', '');
+    const json = hasFlag(args, '--json');
+    const messageId = args.shift();
+    const result = done(root(), { from, messageId, body: body || args.join(' ') });
+    json ? printJson(result) : console.log(`resolved ${messageId}`);
+  } else if (cmd === 'messages') {
+    const json = hasFlag(args, '--json');
+    const open = hasFlag(args, '--open');
+    const limit = Number(takeFlag(args, '--limit', '50'));
+    const result = messages(root(), { limit: Number.isFinite(limit) ? limit : 50, open });
+    json ? printJson(result) : process.stdout.write(formatMessages(result));
   } else if (cmd === 'inbox') {
     const agent = takeFlag(args, '--agent', defaultAgent());
     const sinceLastRead = hasFlag(args, '--since-last-read');

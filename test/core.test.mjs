@@ -5,10 +5,13 @@ import os from 'node:os';
 import path from 'node:path';
 
 import {
+  ack,
   claim,
   claims,
   doctor,
+  done,
   init,
+  messages,
   note,
   overview,
   readAudit,
@@ -185,4 +188,22 @@ test('doctor reports ledger health and nested ledgers', () => {
   assert.equal(report.checks.find(c => c.name === 'root')?.status, 'pass');
   assert.equal(report.checks.find(c => c.name === 'nested-ledgers')?.status, 'warn');
   assert.equal(report.checks.find(c => c.name === 'audit-jsonl')?.status, 'warn');
+});
+
+test('messages get ids and can be acked and resolved through audit events', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  const sent = send(root, { from: 'pi', to: 'claude', type: 'question', body: 'Can you check this?' });
+  assert.match(sent.messageId, /^msg_/);
+
+  const inbox = readInbox(root, { agent: 'claude', clear: false });
+  assert.match(inbox, new RegExp(`\\{#${sent.messageId}\\}`));
+
+  ack(root, { from: 'claude', messageId: sent.messageId, body: 'received' });
+  assert.equal(messages(root, { open: true })[0].status, 'acked');
+  assert.equal(overview(root).openMessages[0].messageId, sent.messageId);
+
+  done(root, { from: 'pi', messageId: sent.messageId, body: 'closed' });
+  assert.equal(messages(root)[0].status, 'done');
+  assert.equal(messages(root, { open: true }).length, 0);
 });

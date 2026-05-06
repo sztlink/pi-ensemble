@@ -33,7 +33,7 @@ See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for the shortest path. See [`docs
 ### Pi package from GitHub
 
 ```bash
-pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.10
+pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.11
 ```
 
 Reload Pi or start a new session, then run:
@@ -72,6 +72,9 @@ ensemble --root /path/to/workspace init [--agent pi]
 ensemble --root /path/to/workspace status
 ensemble note "message" [--from pi]
 ensemble send claude "handoff" [--from pi] [--type handoff]
+ensemble ack msg_xxx [--from claude] [--body "received"]
+ensemble done msg_xxx [--from pi] [--body "resolved"]
+ensemble messages [--open] [--limit 50] [--json]
 ensemble inbox [--agent pi] [--no-clear] [--since-last-read] [--clear] [--json]
 ensemble board [--json]
 ensemble claims [--json]
@@ -88,6 +91,8 @@ Allowed message types: `note`, `handoff`, `question`, `result`, `ack`.
 Inbox reads update per-agent `lastReadAt`. Use `--since-last-read` for focused wakeups: it prints only new messages, marks them read, and keeps retained history in `inbox.md`. `overview` reports both total retained messages and unread counts.
 
 Use `ensemble doctor` when a workflow feels off: it checks required files, protocol version, audit log parse health, claims, agent names, inbox state, and nested `.pi-ensemble` folders that can cause root confusion.
+
+Every `send` returns a message id and writes an inbox anchor like `{#msg_...}`. Use `ack` and `done` for lightweight traceability of handoffs/questions. They append audit events only; they do not schedule, route, or supervise agents.
 
 Canonical/root override examples:
 

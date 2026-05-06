@@ -2,11 +2,14 @@ import { StringEnum } from "@mariozechner/pi-ai";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
 import {
+  ack,
   claim,
   claims,
   defaultAgent,
   doctor,
+  done,
   init,
+  messages,
   note,
   overview,
   readAudit,
@@ -20,7 +23,7 @@ import {
 } from "../lib/core.mjs";
 
 const MessageType = StringEnum(["note", "handoff", "question", "result", "ack"] as const);
-const ActionType = StringEnum(["init", "status", "note", "send", "inbox", "board", "claims", "audit", "timeline", "overview", "doctor", "claim", "release"] as const);
+const ActionType = StringEnum(["init", "status", "note", "send", "ack", "done", "messages", "inbox", "board", "claims", "audit", "timeline", "overview", "doctor", "claim", "release"] as const);
 
 function parseArgs(input: string): string[] {
   const out: string[] = [];
@@ -73,8 +76,30 @@ export default function (pi: ExtensionAPI) {
         if (cmd === "send") {
           const type = takeFlag(argv, "--type", "handoff") as "note" | "handoff" | "question" | "result" | "ack";
           const to = argv.shift();
-          send(rootFromCwd(ctx, explicitRoot), { from: defaultAgent(), to, type, body: argv.join(" ") });
-          ctx.ui.notify(`pi-ensemble sent to ${to}`, "success");
+          const result = send(rootFromCwd(ctx, explicitRoot), { from: defaultAgent(), to, type, body: argv.join(" ") });
+          ctx.ui.notify(`pi-ensemble sent to ${to}: ${result.messageId}`, "success");
+          return;
+        }
+        if (cmd === "ack") {
+          const from = takeFlag(argv, "--from", defaultAgent()) || defaultAgent();
+          const body = takeFlag(argv, "--body", "") || "";
+          const messageId = argv.shift();
+          const result = ack(rootFromCwd(ctx, explicitRoot), { from, messageId, body: body || argv.join(" ") });
+          ctx.ui.notify(`pi-ensemble acked ${result.messageId}`, "success");
+          return;
+        }
+        if (cmd === "done") {
+          const from = takeFlag(argv, "--from", defaultAgent()) || defaultAgent();
+          const body = takeFlag(argv, "--body", "") || "";
+          const messageId = argv.shift();
+          const result = done(rootFromCwd(ctx, explicitRoot), { from, messageId, body: body || argv.join(" ") });
+          ctx.ui.notify(`pi-ensemble resolved ${result.messageId}`, "success");
+          return;
+        }
+        if (cmd === "messages") {
+          const limit = Number(takeFlag(argv, "--limit", "50"));
+          const open = argv.includes("--open");
+          ctx.ui.notify(asText(messages(rootFromCwd(ctx, explicitRoot), { limit: Number.isFinite(limit) ? limit : 50, open })), "info");
           return;
         }
         if (cmd === "inbox") {
@@ -122,7 +147,7 @@ export default function (pi: ExtensionAPI) {
           ctx.ui.notify("pi-ensemble path released", "success");
           return;
         }
-        ctx.ui.notify("Usage: /ensemble init|status|note|send|inbox|board|claims|audit|timeline|overview|doctor|claim|release", "warning");
+        ctx.ui.notify("Usage: /ensemble init|status|note|send|ack|done|messages|inbox|board|claims|audit|timeline|overview|doctor|claim|release", "warning");
       } catch (err) {
         ctx.ui.notify(err instanceof Error ? err.message : String(err), "error");
       }
@@ -145,11 +170,13 @@ export default function (pi: ExtensionAPI) {
       to: Type.Optional(Type.String({ description: "Target agent for send" })),
       type: Type.Optional(MessageType),
       body: Type.Optional(Type.String({ description: "Message body" })),
+      messageId: Type.Optional(Type.String({ description: "Message id for ack/done" })),
       path: Type.Optional(Type.String({ description: "Path to claim or release" })),
       clear: Type.Optional(Type.Boolean({ description: "Clear inbox after reading", default: true })),
       sinceLastRead: Type.Optional(Type.Boolean({ description: "Return only messages newer than this agent's last read timestamp", default: false })),
       force: Type.Optional(Type.Boolean({ description: "Override claim ownership conflicts", default: false })),
-      limit: Type.Optional(Type.Number({ description: "Maximum audit records to return", default: 50 })),
+      limit: Type.Optional(Type.Number({ description: "Maximum audit/message records to return", default: 50 })),
+      open: Type.Optional(Type.Boolean({ description: "For messages: return only messages not marked done", default: false })),
       root: Type.Optional(Type.String({ description: "Workspace root or descendant containing .pi-ensemble" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
@@ -164,6 +191,9 @@ export default function (pi: ExtensionAPI) {
         if (params.action === "status") result = status(root);
         else if (params.action === "note") result = note(root, { from: agent, body: params.body || "" });
         else if (params.action === "send") result = send(root, { from: agent, to: params.to, type: params.type || "handoff", body: params.body || "" });
+        else if (params.action === "ack") result = ack(root, { from: agent, messageId: params.messageId, body: params.body || "" });
+        else if (params.action === "done") result = done(root, { from: agent, messageId: params.messageId, body: params.body || "" });
+        else if (params.action === "messages") result = messages(root, { limit: params.limit ?? 50, open: params.open === true });
         else if (params.action === "inbox") result = readInbox(root, { agent, clear: params.sinceLastRead === true ? false : params.clear !== false, sinceLastRead: params.sinceLastRead === true });
         else if (params.action === "board") result = readBoard(root);
         else if (params.action === "claims") result = claims(root);

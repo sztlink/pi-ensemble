@@ -50,6 +50,22 @@ Examples: `pi`, `claude`, `claude-lead`, `codex.1`.
 - `result`: completed output or artifact pointer
 - `ack`: acknowledgement / receipt
 
+## Message ids and lifecycle
+
+`ensemble send` creates a message id (`msg_...`) and writes it into the inbox heading as an anchor:
+
+```md
+## 2026-05-06T... — pi → claude [question] {#msg_abc123...}
+```
+
+Message lifecycle is audit-only:
+
+- `ack MESSAGE_ID`: recipient or observer records receipt/acceptance;
+- `done MESSAGE_ID`: actor records that the handoff/question is resolved;
+- `messages [--open]`: reconstructs lifecycle state from `audit.jsonl`.
+
+No scheduler, router, retry loop, or process state is implied by these events.
+
 ## Inbox read state
 
 Each agent has `state.json`. `lastReadAt` is updated whenever that agent reads its inbox, including non-clearing reads. Status/overview expose:
@@ -87,7 +103,7 @@ The Pi extension/tool accepts the same concept via `--root` in slash commands or
 
 ## Machine-readable output
 
-The CLI supports `--json` for operations that adapters commonly consume: `note`, `send`, `inbox`, `board`, `claims`, `audit`, `timeline`, `overview`, `doctor`, `claim`, and `release`. `status` is JSON by default.
+The CLI supports `--json` for operations that adapters commonly consume: `note`, `send`, `ack`, `done`, `messages`, `inbox`, `board`, `claims`, `audit`, `timeline`, `overview`, `doctor`, `claim`, and `release`. `status` is JSON by default.
 
 ## Health checks
 
