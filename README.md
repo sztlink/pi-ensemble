@@ -1,8 +1,8 @@
 # pi-ensemble
 
-Shared workspace coordination for parallel coding agents.
+Shared workspace coordination ledger for parallel coding agents.
 
-`pi-ensemble` is a small local blackboard + mailbox protocol for developers who run multiple coding agents side by side. It is designed for Pi, Claude Code, Codex, or any terminal agent that can read and write files.
+`pi-ensemble` is a small local coordination ledger: blackboard + mailbox + claims + audit for developers who run multiple coding agents side by side. It is designed for Pi, Claude Code, Codex, or any terminal agent that can read and write files.
 
 It is **not** a daemon, process supervisor, remote-control system, or agent auto-runner.
 
@@ -75,13 +75,13 @@ See [`SECURITY.md`](SECURITY.md). In short: no network, no spawning, no command 
 
 ## Hybrid runtimes
 
-Pi can use the package extension and tool directly. Claude Code and other terminal agents can participate through the same CLI/files. Tmux wakeups should remain an adapter outside the core protocol. See [`docs/ADAPTERS.md`](docs/ADAPTERS.md).
+Pi can use the package extension and tool directly. Claude Code can participate directly or through a lead session that also uses Agent Teams internally. Codex and other terminal agents can participate through the same CLI/files. Tmux wakeups should remain an adapter outside the core protocol. See [`docs/ADAPTERS.md`](docs/ADAPTERS.md).
 
 ## Relationship to existing workflows
 
 `pi-ensemble` generalizes a simple bridge pattern: blackboard for durable shared facts, inboxes for handoffs, audit log for traceability. Integrations with tmux, watchers, or external dashboards should remain outside v0.1.
 
-See [`docs/LANDSCAPE.md`](docs/LANDSCAPE.md) for a benchmark of related Claude Code, Pi, tmux, and terminal-agent orchestrators and why `pi-ensemble` stays smaller: local file protocol, not mission control. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the path from substrate to Pi-maestro workflows.
+See [`docs/LANDSCAPE.md`](docs/LANDSCAPE.md) for a benchmark of related Claude Code, Pi, tmux, and terminal-agent orchestrators and why `pi-ensemble` stays smaller: local file protocol, not mission control. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the repositioning from would-be orchestrator toward neutral ledger + adapter protocol.
 
 ## Repository decision
 
