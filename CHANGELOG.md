@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.0-alpha.8
+
+- Added canonical root overrides for nested workspaces:
+  - CLI `--root PATH`;
+  - `PI_ENSEMBLE_ROOT` environment variable;
+  - Pi tool `root` parameter;
+  - Pi slash command `--root PATH`.
+- Documented root resolution to avoid accidental use of nested `.pi-ensemble/` ledgers.
+
 ## v0.1.0-alpha.7 — publish candidate
 
 - Documented GitHub Pi package install path.

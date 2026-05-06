@@ -6,7 +6,7 @@ These recipes show how different coding-agent runtimes can participate in the sa
 
 All runtimes should:
 
-1. Start from the project root.
+1. Start from the project root, or set `PI_ENSEMBLE_ROOT=/path/to/project`.
 2. Read `ensemble status`.
 3. Read their inbox with `--no-clear` before clearing anything.
 4. Claim paths before edits.

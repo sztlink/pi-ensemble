@@ -10,6 +10,15 @@ ensemble init --agent pi
 ensemble status
 ```
 
+If you often work from nested repositories or subdirectories, pin the canonical ledger root:
+
+```bash
+export PI_ENSEMBLE_ROOT=/path/to/project
+ensemble overview
+# or per command:
+ensemble --root /path/to/project overview
+```
+
 This creates:
 
 ```txt

@@ -20,8 +20,8 @@ function usage() {
   console.log(`pi-ensemble
 
 Usage:
-  ensemble init [--agent NAME]
-  ensemble status
+  ensemble [--root PATH] init [--agent NAME]
+  ensemble [--root PATH] status
   ensemble note MESSAGE [--from NAME] [--json]
   ensemble send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--json]
   ensemble inbox [--agent NAME] [--no-clear] [--json]
@@ -50,8 +50,14 @@ function hasFlag(args, name) {
   return true;
 }
 
+let explicitRoot;
+
 function root() {
-  return requireWorkspaceRoot(process.cwd());
+  return requireWorkspaceRoot(explicitRoot || process.env.PI_ENSEMBLE_ROOT || process.cwd());
+}
+
+function initRoot() {
+  return explicitRoot || process.env.PI_ENSEMBLE_ROOT || process.cwd();
 }
 
 function printJson(value) {
@@ -77,12 +83,14 @@ function formatOverview(value) {
 
 try {
   const args = process.argv.slice(2);
+  explicitRoot = takeFlag(args, '--root', undefined);
   const cmd = args.shift() || 'help';
+  if (!explicitRoot) explicitRoot = takeFlag(args, '--root', undefined);
   if (cmd === 'help' || cmd === '--help' || cmd === '-h') {
     usage();
   } else if (cmd === 'init') {
     const agent = takeFlag(args, '--agent', defaultAgent());
-    const r = init(process.cwd(), { agent });
+    const r = init(initRoot(), { agent });
     console.log(`initialized ${r.dir} (agent: ${r.agent})`);
   } else if (cmd === 'status') {
     const s = status(root());

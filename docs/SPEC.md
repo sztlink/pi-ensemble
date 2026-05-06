@@ -62,6 +62,19 @@ Examples: `pi`, `claude`, `claude-lead`, `codex.1`.
 
 A path claimed by another agent cannot be overwritten or released unless the caller uses a force override. Overrides are audited and keep the previous owner in the audit record.
 
+## Root resolution
+
+By default, commands search upward from the current directory until they find `.pi-ensemble/`.
+
+For nested repositories or canonical shared ledgers, callers can override root resolution with:
+
+```bash
+PI_ENSEMBLE_ROOT=/path/to/workspace ensemble overview
+ensemble --root /path/to/workspace overview
+```
+
+The Pi extension/tool accepts the same concept via `--root` in slash commands or a `root` parameter in the tool.
+
 ## Machine-readable output
 
 The CLI supports `--json` for operations that adapters commonly consume: `note`, `send`, `inbox`, `board`, `claims`, `audit`, `timeline`, `overview`, `claim`, and `release`. `status` is JSON by default.

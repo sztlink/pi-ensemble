@@ -41,8 +41,8 @@ function takeFlag(argv: string[], name: string, fallback?: string): string | und
   return value ?? fallback;
 }
 
-function rootFromCwd(ctx: { cwd: string }) {
-  return requireWorkspaceRoot(ctx.cwd);
+function rootFromCwd(ctx: { cwd: string }, explicitRoot?: string) {
+  return requireWorkspaceRoot(explicitRoot || process.env.PI_ENSEMBLE_ROOT || ctx.cwd);
 }
 
 export default function (pi: ExtensionAPI) {
@@ -50,65 +50,67 @@ export default function (pi: ExtensionAPI) {
     description: "Local blackboard/mailbox for parallel coding agents",
     handler: async (args, ctx) => {
       const argv = parseArgs(args || "");
+      let explicitRoot = takeFlag(argv, "--root", undefined);
       const cmd = argv.shift() || "status";
+      if (!explicitRoot) explicitRoot = takeFlag(argv, "--root", undefined);
       try {
         if (cmd === "init") {
           const agent = argv[0] || defaultAgent();
-          const r = init(ctx.cwd, { agent });
+          const r = init(explicitRoot || process.env.PI_ENSEMBLE_ROOT || ctx.cwd, { agent });
           ctx.ui.notify(`pi-ensemble initialized: ${r.dir}`, "success");
           return;
         }
         if (cmd === "status") {
-          ctx.ui.notify(asText(status(rootFromCwd(ctx))), "info");
+          ctx.ui.notify(asText(status(rootFromCwd(ctx, explicitRoot))), "info");
           return;
         }
         if (cmd === "note") {
-          note(rootFromCwd(ctx), { from: defaultAgent(), body: argv.join(" ") });
+          note(rootFromCwd(ctx, explicitRoot), { from: defaultAgent(), body: argv.join(" ") });
           ctx.ui.notify("pi-ensemble note added", "success");
           return;
         }
         if (cmd === "send") {
           const type = takeFlag(argv, "--type", "handoff") as "note" | "handoff" | "question" | "result" | "ack";
           const to = argv.shift();
-          send(rootFromCwd(ctx), { from: defaultAgent(), to, type, body: argv.join(" ") });
+          send(rootFromCwd(ctx, explicitRoot), { from: defaultAgent(), to, type, body: argv.join(" ") });
           ctx.ui.notify(`pi-ensemble sent to ${to}`, "success");
           return;
         }
         if (cmd === "inbox") {
-          const content = readInbox(rootFromCwd(ctx), { agent: argv[0] || defaultAgent(), clear: true });
+          const content = readInbox(rootFromCwd(ctx, explicitRoot), { agent: argv[0] || defaultAgent(), clear: true });
           ctx.ui.notify(content || "Inbox empty", "info");
           return;
         }
         if (cmd === "board") {
-          ctx.ui.notify(readBoard(rootFromCwd(ctx)), "info");
+          ctx.ui.notify(readBoard(rootFromCwd(ctx, explicitRoot)), "info");
           return;
         }
         if (cmd === "claims") {
-          ctx.ui.notify(asText(claims(rootFromCwd(ctx))), "info");
+          ctx.ui.notify(asText(claims(rootFromCwd(ctx, explicitRoot))), "info");
           return;
         }
         if (cmd === "audit") {
           const limit = Number(takeFlag(argv, "--limit", "50"));
-          ctx.ui.notify(asText(readAudit(rootFromCwd(ctx), { limit: Number.isFinite(limit) ? limit : 50 })), "info");
+          ctx.ui.notify(asText(readAudit(rootFromCwd(ctx, explicitRoot), { limit: Number.isFinite(limit) ? limit : 50 })), "info");
           return;
         }
         if (cmd === "timeline") {
           const limit = Number(takeFlag(argv, "--limit", "50"));
-          ctx.ui.notify(asText(timeline(rootFromCwd(ctx), { limit: Number.isFinite(limit) ? limit : 50 })), "info");
+          ctx.ui.notify(asText(timeline(rootFromCwd(ctx, explicitRoot), { limit: Number.isFinite(limit) ? limit : 50 })), "info");
           return;
         }
         if (cmd === "overview") {
           const limit = Number(takeFlag(argv, "--limit", "10"));
-          ctx.ui.notify(asText(overview(rootFromCwd(ctx), { limit: Number.isFinite(limit) ? limit : 10 })), "info");
+          ctx.ui.notify(asText(overview(rootFromCwd(ctx, explicitRoot), { limit: Number.isFinite(limit) ? limit : 10 })), "info");
           return;
         }
         if (cmd === "claim") {
-          claim(rootFromCwd(ctx), { agent: defaultAgent(), targetPath: argv.join(" ") });
+          claim(rootFromCwd(ctx, explicitRoot), { agent: defaultAgent(), targetPath: argv.join(" ") });
           ctx.ui.notify("pi-ensemble path claimed", "success");
           return;
         }
         if (cmd === "release") {
-          release(rootFromCwd(ctx), { agent: defaultAgent(), targetPath: argv.join(" ") });
+          release(rootFromCwd(ctx, explicitRoot), { agent: defaultAgent(), targetPath: argv.join(" ") });
           ctx.ui.notify("pi-ensemble path released", "success");
           return;
         }
@@ -139,15 +141,16 @@ export default function (pi: ExtensionAPI) {
       clear: Type.Optional(Type.Boolean({ description: "Clear inbox after reading", default: true })),
       force: Type.Optional(Type.Boolean({ description: "Override claim ownership conflicts", default: false })),
       limit: Type.Optional(Type.Number({ description: "Maximum audit records to return", default: 50 })),
+      root: Type.Optional(Type.String({ description: "Workspace root or descendant containing .pi-ensemble" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       try {
         const agent = params.agent || defaultAgent();
         if (params.action === "init") {
-          const result = init(ctx.cwd, { agent });
+          const result = init(params.root || process.env.PI_ENSEMBLE_ROOT || ctx.cwd, { agent });
           return { content: [{ type: "text", text: `Initialized ${result.dir}` }], details: result };
         }
-        const root = rootFromCwd(ctx);
+        const root = rootFromCwd(ctx, params.root);
         let result: unknown;
         if (params.action === "status") result = status(root);
         else if (params.action === "note") result = note(root, { from: agent, body: params.body || "" });

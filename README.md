@@ -65,9 +65,11 @@ pi install npm:@sztlink/pi-ensemble@alpha
 
 ## CLI
 
+Use `--root PATH` or `PI_ENSEMBLE_ROOT=/path/to/workspace` when running from nested repositories or subdirectories.
+
 ```bash
-ensemble init [--agent pi]
-ensemble status
+ensemble --root /path/to/workspace init [--agent pi]
+ensemble --root /path/to/workspace status
 ensemble note "message" [--from pi]
 ensemble send claude "handoff" [--from pi] [--type handoff]
 ensemble inbox [--agent pi] [--no-clear] [--json]
@@ -81,6 +83,13 @@ ensemble release ./worktree-or-path [--agent pi] [--force] [--json]
 ```
 
 Allowed message types: `note`, `handoff`, `question`, `result`, `ack`.
+
+Canonical/root override examples:
+
+```bash
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble overview
+ensemble --root /home/aya/implante inbox --agent pi --no-clear
+```
 
 ## Pi commands
 
