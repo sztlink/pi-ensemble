@@ -10,13 +10,16 @@ ensemble init --agent pi
 ensemble status
 ```
 
-If you often work from nested repositories or subdirectories, pin the canonical ledger root:
+If you often work from nested repositories, subdirectories, or a neutral runtime root, pin the canonical ledger root:
 
 ```bash
 export PI_ENSEMBLE_ROOT=/path/to/project
 ensemble overview
 # or per command:
 ensemble --root /path/to/project overview
+
+# Example: agent stays in /home/aya while ledger lives in /home/aya/implante
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble inbox --agent claude --since-last-read
 ```
 
 This creates:
@@ -118,7 +121,7 @@ Claude Code can participate through the CLI. See [`CLAUDE_AGENT_TEAMS.md`](CLAUD
 Recommended lead-session commands:
 
 ```bash
-cd ~/implante
+# from the project root, or prefix with PI_ENSEMBLE_ROOT=/canonical/root from a neutral runtime root
 ensemble overview
 ensemble inbox --agent claude-lead --since-last-read
 ensemble claim <path> --agent claude-lead

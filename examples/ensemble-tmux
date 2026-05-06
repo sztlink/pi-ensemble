@@ -69,7 +69,7 @@ wake_agent() {
 
   # Shell-safe: if this lands in a bash pane, it is just a comment.
   # Agent-safe: if this lands in a Pi/Claude prompt, it is readable markdown.
-  local prompt="# pi-ensemble: new inbox item. Run: cd $ROOT && ensemble inbox --agent $agent --since-last-read"
+  local prompt="# pi-ensemble: new inbox item. Run from any cwd: PI_ENSEMBLE_ROOT=$ROOT ensemble inbox --agent $agent --since-last-read"
   if [[ -n "$message" ]]; then
     prompt="$prompt — $message"
   fi

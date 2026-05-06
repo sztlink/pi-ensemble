@@ -50,7 +50,7 @@ ensemble send claude-lead "full handoff body" --from pi --type handoff
 For tmux, wake text should be shell-safe. Prefix with `#` so accidental paste into a shell pane is a harmless comment, while Pi/Claude still receive a readable markdown-style prompt:
 
 ```txt
-# pi-ensemble: new inbox item. Run: cd /repo && ensemble inbox --agent claude-lead --since-last-read
+# pi-ensemble: new inbox item. Run: PI_ENSEMBLE_ROOT=/repo ensemble inbox --agent claude-lead --since-last-read
 ```
 
 Do not paste long instructions through tmux. Put them in the inbox.
@@ -87,18 +87,23 @@ Pi-specific guidance:
 Claude Code does not need a native plugin for v0.1. It participates through the CLI and files:
 
 ```bash
-cd ~/implante
+# From the project root:
 ensemble status
 ensemble inbox --agent claude-lead --since-last-read
 ensemble note "durable fact" --from claude-lead
 ensemble send pi "handoff" --from claude-lead --type handoff
 ensemble claim ./path --agent claude-lead
 ensemble release ./path --agent claude-lead
+
+# Or from a neutral runtime root while using a canonical ledger elsewhere:
+PI_ENSEMBLE_ROOT=~/implante ensemble overview
+PI_ENSEMBLE_ROOT=~/implante ensemble inbox --agent claude-lead --since-last-read
+PI_ENSEMBLE_ROOT=~/implante ensemble send pi "Result: ..." --from claude-lead --type result
 ```
 
 Recommended Claude lead-session habit:
 
-1. On start, inspect `ensemble overview` from the project root.
+1. On start, inspect `ensemble overview` from the project root, or `PI_ENSEMBLE_ROOT=/canonical/root ensemble overview` from a neutral runtime root.
 2. If the lead has unread inbox items, read with `--since-last-read` first.
 3. If useful, use Claude Code Agent Teams internally.
 4. Mirror only durable milestones to `pi-ensemble`:

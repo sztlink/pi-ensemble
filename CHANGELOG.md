@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.0-alpha.12
+
+- Documented neutral-root runtime usage: keep Pi/Claude in their natural runtime root and point to the canonical ledger with `PI_ENSEMBLE_ROOT` or `--root`.
+- Updated tmux wake adapter prompt to use `PI_ENSEMBLE_ROOT=... ensemble ...` instead of requiring `cd` into the ledger root.
+- Refreshed GitHub install docs for the latest alpha.
+
 ## v0.1.0-alpha.11
 
 - Added lightweight message lifecycle without adding orchestration:

@@ -6,7 +6,7 @@ These recipes show how different coding-agent runtimes can participate in the sa
 
 All runtimes should:
 
-1. Start from the project root, or set `PI_ENSEMBLE_ROOT=/path/to/project`.
+1. Start from the project root, or stay in a neutral runtime root and set `PI_ENSEMBLE_ROOT=/path/to/project`.
 2. Read `ensemble overview`.
 3. Read their new inbox items with `--since-last-read` before broad/clearing reads.
 4. Claim paths before edits.
@@ -34,15 +34,15 @@ Recommended Pi role:
 
 ## Claude Code lead
 
-Claude can use the CLI directly:
+Claude can use the CLI directly. If Claude starts in a neutral runtime root, prefix commands with `PI_ENSEMBLE_ROOT=/canonical/ledger/root`:
 
 ```bash
-ensemble inbox --agent claude-lead --since-last-read
-ensemble ack msg_xxx --from claude-lead --body "received"
-ensemble claim src/foo.ts --agent claude-lead
-ensemble note "Started Agent Teams review for src/foo.ts" --from claude-lead
-ensemble send pi "Result: findings at docs/foo-review.md" --from claude-lead --type result
-ensemble release src/foo.ts --agent claude-lead
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble inbox --agent claude-lead --since-last-read
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble ack msg_xxx --from claude-lead --body "received"
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble claim src/foo.ts --agent claude-lead
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble note "Started Agent Teams review for src/foo.ts" --from claude-lead
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble send pi "Result: findings at docs/foo-review.md" --from claude-lead --type result
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble release src/foo.ts --agent claude-lead
 ```
 
 If using native Agent Teams, mirror only durable milestones. See `CLAUDE_AGENT_TEAMS.md`.

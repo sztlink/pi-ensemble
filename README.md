@@ -33,7 +33,7 @@ See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for the shortest path. See [`docs
 ### Pi package from GitHub
 
 ```bash
-pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.11
+pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.12
 ```
 
 Reload Pi or start a new session, then run:
@@ -65,7 +65,7 @@ pi install npm:@sztlink/pi-ensemble@alpha
 
 ## CLI
 
-Use `--root PATH` or `PI_ENSEMBLE_ROOT=/path/to/workspace` when running from nested repositories or subdirectories.
+Use `--root PATH` or `PI_ENSEMBLE_ROOT=/path/to/workspace` when running from nested repositories, subdirectories, or neutral runtime roots. This lets Pi/Claude stay in their natural session root while sharing one canonical ledger elsewhere.
 
 ```bash
 ensemble --root /path/to/workspace init [--agent pi]
@@ -97,7 +97,12 @@ Every `send` returns a message id and writes an inbox anchor like `{#msg_...}`. 
 Canonical/root override examples:
 
 ```bash
+# Neutral-root runtime: stay wherever the agent naturally starts, point at the ledger.
 PI_ENSEMBLE_ROOT=/home/aya/implante ensemble overview
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble inbox --agent claude --since-last-read
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble send pi "Result: ..." --from claude --type result
+
+# Equivalent explicit flag:
 ensemble --root /home/aya/implante inbox --agent pi --since-last-read
 ```
 
