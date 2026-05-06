@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import {
   claim,
+  claims,
   defaultAgent,
   init,
   note,
+  readAudit,
   readBoard,
   readInbox,
   release,
@@ -22,6 +24,8 @@ Usage:
   ensemble send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--json]
   ensemble inbox [--agent NAME] [--no-clear] [--json]
   ensemble board [--json]
+  ensemble claims [--json]
+  ensemble audit [--limit N] [--json]
   ensemble claim PATH [--agent NAME] [--force] [--json]
   ensemble release PATH [--agent NAME] [--force] [--json]
 `);
@@ -86,6 +90,15 @@ try {
     const json = hasFlag(args, '--json');
     const content = readBoard(root());
     json ? printJson({ content }) : process.stdout.write(content);
+  } else if (cmd === 'claims') {
+    const json = hasFlag(args, '--json');
+    const result = claims(root());
+    json ? printJson(result) : printJson(result);
+  } else if (cmd === 'audit') {
+    const json = hasFlag(args, '--json');
+    const limit = Number(takeFlag(args, '--limit', '50'));
+    const result = readAudit(root(), { limit: Number.isFinite(limit) ? limit : 50 });
+    json ? printJson(result) : process.stdout.write(result.map(r => JSON.stringify(r)).join('\n') + (result.length ? '\n' : ''));
   } else if (cmd === 'claim') {
     const agent = takeFlag(args, '--agent', defaultAgent());
     const force = hasFlag(args, '--force');

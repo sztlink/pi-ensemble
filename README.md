@@ -48,8 +48,10 @@ ensemble init [--agent pi]
 ensemble status
 ensemble note "message" [--from pi]
 ensemble send claude "handoff" [--from pi] [--type handoff]
-ensemble inbox [--agent pi] [--no-clear]
-ensemble board
+ensemble inbox [--agent pi] [--no-clear] [--json]
+ensemble board [--json]
+ensemble claims [--json]
+ensemble audit [--limit 50] [--json]
 ensemble claim ./worktree-or-path [--agent pi] [--force] [--json]
 ensemble release ./worktree-or-path [--agent pi] [--force] [--json]
 ```

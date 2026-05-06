@@ -6,8 +6,10 @@ import path from 'node:path';
 
 import {
   claim,
+  claims,
   init,
   note,
+  readAudit,
   readBoard,
   readInbox,
   release,
@@ -26,7 +28,9 @@ test('init creates readable protocol files', () => {
   assert.ok(fs.existsSync(path.join(root, '.pi-ensemble', 'config.yaml')));
   assert.ok(fs.existsSync(path.join(root, '.pi-ensemble', 'blackboard.md')));
   assert.ok(fs.existsSync(path.join(root, '.pi-ensemble', 'agents', 'pi', 'inbox.md')));
-  assert.equal(status(root).agents.find(a => a.agent === 'pi')?.pending, 0);
+  const s = status(root);
+  assert.equal(s.version, 1);
+  assert.equal(s.agents.find(a => a.agent === 'pi')?.pending, 0);
 });
 
 test('send writes typed inbox message and readInbox can archive/clear', () => {
@@ -75,6 +79,19 @@ test('claim prevents accidental ownership overwrite unless forced', () => {
   assert.equal(forced.previous.agent, 'pi');
 
   assert.throws(() => release(root, { agent: 'pi', targetPath: 'src/foo.ts' }), /claimed by claude/);
+  assert.equal(claims(root)[path.resolve(root, 'src/foo.ts')].agent, 'claude');
+
   const released = release(root, { agent: 'claude', targetPath: 'src/foo.ts' });
   assert.equal(released.previous.agent, 'claude');
+});
+
+test('readAudit returns parsed audit records with limit', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  note(root, { from: 'pi', body: 'one' });
+  send(root, { from: 'pi', to: 'claude', body: 'two' });
+
+  const records = readAudit(root, { limit: 2 });
+  assert.equal(records.length, 2);
+  assert.deepEqual(records.map(r => r.action), ['note', 'send']);
 });

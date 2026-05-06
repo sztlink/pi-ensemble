@@ -78,6 +78,8 @@ Adapters can use JSON output:
 ```bash
 ensemble inbox --agent pi --no-clear --json
 ensemble claim docs/ROADMAP.md --agent pi --json
+ensemble claims --json
+ensemble audit --limit 20 --json
 ```
 
 ## Pi usage

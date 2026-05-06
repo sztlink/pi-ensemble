@@ -3,9 +3,11 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
 import {
   claim,
+  claims,
   defaultAgent,
   init,
   note,
+  readAudit,
   readBoard,
   readInbox,
   release,
@@ -15,7 +17,7 @@ import {
 } from "../lib/core.mjs";
 
 const MessageType = StringEnum(["note", "handoff", "question", "result", "ack"] as const);
-const ActionType = StringEnum(["init", "status", "note", "send", "inbox", "board", "claim", "release"] as const);
+const ActionType = StringEnum(["init", "status", "note", "send", "inbox", "board", "claims", "audit", "claim", "release"] as const);
 
 function parseArgs(input: string): string[] {
   const out: string[] = [];
@@ -79,6 +81,15 @@ export default function (pi: ExtensionAPI) {
           ctx.ui.notify(readBoard(rootFromCwd(ctx)), "info");
           return;
         }
+        if (cmd === "claims") {
+          ctx.ui.notify(asText(claims(rootFromCwd(ctx))), "info");
+          return;
+        }
+        if (cmd === "audit") {
+          const limit = Number(takeFlag(argv, "--limit", "50"));
+          ctx.ui.notify(asText(readAudit(rootFromCwd(ctx), { limit: Number.isFinite(limit) ? limit : 50 })), "info");
+          return;
+        }
         if (cmd === "claim") {
           claim(rootFromCwd(ctx), { agent: defaultAgent(), targetPath: argv.join(" ") });
           ctx.ui.notify("pi-ensemble path claimed", "success");
@@ -89,7 +100,7 @@ export default function (pi: ExtensionAPI) {
           ctx.ui.notify("pi-ensemble path released", "success");
           return;
         }
-        ctx.ui.notify("Usage: /ensemble init|status|note|send|inbox|board|claim|release", "warning");
+        ctx.ui.notify("Usage: /ensemble init|status|note|send|inbox|board|claims|audit|claim|release", "warning");
       } catch (err) {
         ctx.ui.notify(err instanceof Error ? err.message : String(err), "error");
       }
@@ -115,6 +126,7 @@ export default function (pi: ExtensionAPI) {
       path: Type.Optional(Type.String({ description: "Path to claim or release" })),
       clear: Type.Optional(Type.Boolean({ description: "Clear inbox after reading", default: true })),
       force: Type.Optional(Type.Boolean({ description: "Override claim ownership conflicts", default: false })),
+      limit: Type.Optional(Type.Number({ description: "Maximum audit records to return", default: 50 })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       try {
@@ -130,6 +142,8 @@ export default function (pi: ExtensionAPI) {
         else if (params.action === "send") result = send(root, { from: agent, to: params.to, type: params.type || "handoff", body: params.body || "" });
         else if (params.action === "inbox") result = readInbox(root, { agent, clear: params.clear !== false });
         else if (params.action === "board") result = readBoard(root);
+        else if (params.action === "claims") result = claims(root);
+        else if (params.action === "audit") result = readAudit(root, { limit: params.limit ?? 50 });
         else if (params.action === "claim") result = claim(root, { agent, targetPath: params.path, force: params.force === true });
         else if (params.action === "release") result = release(root, { agent, targetPath: params.path, force: params.force === true });
         return { content: [{ type: "text", text: asText(result) }], details: { result } };
