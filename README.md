@@ -30,10 +30,22 @@ See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for the shortest path. See [`docs
 
 ## Install
 
+### Pi package from npm (recommended)
+
+```bash
+pi install npm:@sztlink/pi-ensemble@alpha
+```
+
+Reload Pi or start a new session, then run:
+
+```txt
+/ensemble status
+```
+
 ### Pi package from GitHub
 
 ```bash
-pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.12
+pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.13
 ```
 
 Reload Pi or start a new session, then run:
@@ -55,12 +67,11 @@ pi install /absolute/path/to/pi-ensemble
 node /absolute/path/to/pi-ensemble/bin/ensemble.mjs init
 ```
 
-### npm
-
-The npm package is not published yet. Once published:
+### CLI via npm
 
 ```bash
-pi install npm:@sztlink/pi-ensemble@alpha
+npm install -g @sztlink/pi-ensemble@alpha
+ensemble --help
 ```
 
 ## CLI
@@ -130,6 +141,21 @@ See [`SECURITY.md`](SECURITY.md). In short: no network, no spawning, no command 
 ## Hybrid runtimes
 
 Pi can use the package extension and tool directly. Claude Code can participate directly or through a lead session that also uses Agent Teams internally. Codex and other terminal agents can participate through the same CLI/files. Tmux wakeups should remain an adapter outside the core protocol. See [`docs/ADAPTERS.md`](docs/ADAPTERS.md) and [`examples/ensemble-tmux`](examples/ensemble-tmux).
+
+## Discovery / Pi package gallery
+
+`pi-ensemble` is published to npm with the `pi-package` keyword and a `pi.extensions` manifest, so Pi can install it directly and package indexes can discover it:
+
+```bash
+pi install npm:@sztlink/pi-ensemble@alpha
+```
+
+Public alpha framing:
+
+```txt
+Local coordination ledger for Pi, Claude Code, tmux, and terminal agents.
+Not an orchestrator. Not a daemon. Just readable files for handoffs, claims, and audit.
+```
 
 ## Relationship to existing workflows
 

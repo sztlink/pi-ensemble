@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.0-alpha.13
+
+- Added npm-first install docs now that `@sztlink/pi-ensemble` is published.
+- Expanded npm/Pi package discoverability metadata keywords.
+- Added `docs/PROMOTION.md` with public alpha framing, install snippets, and Pi gallery eligibility notes.
+
 ## v0.1.0-alpha.12
 
 - Documented neutral-root runtime usage: keep Pi/Claude in their natural runtime root and point to the canonical ledger with `PI_ENSEMBLE_ROOT` or `--root`.
