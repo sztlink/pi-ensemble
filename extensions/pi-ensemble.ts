@@ -5,6 +5,7 @@ import {
   claim,
   claims,
   defaultAgent,
+  doctor,
   init,
   note,
   overview,
@@ -19,7 +20,7 @@ import {
 } from "../lib/core.mjs";
 
 const MessageType = StringEnum(["note", "handoff", "question", "result", "ack"] as const);
-const ActionType = StringEnum(["init", "status", "note", "send", "inbox", "board", "claims", "audit", "timeline", "overview", "claim", "release"] as const);
+const ActionType = StringEnum(["init", "status", "note", "send", "inbox", "board", "claims", "audit", "timeline", "overview", "doctor", "claim", "release"] as const);
 
 function parseArgs(input: string): string[] {
   const out: string[] = [];
@@ -107,6 +108,10 @@ export default function (pi: ExtensionAPI) {
           ctx.ui.notify(asText(overview(rootFromCwd(ctx, explicitRoot), { limit: Number.isFinite(limit) ? limit : 10 })), "info");
           return;
         }
+        if (cmd === "doctor") {
+          ctx.ui.notify(asText(doctor(rootFromCwd(ctx, explicitRoot))), "info");
+          return;
+        }
         if (cmd === "claim") {
           claim(rootFromCwd(ctx, explicitRoot), { agent: defaultAgent(), targetPath: argv.join(" ") });
           ctx.ui.notify("pi-ensemble path claimed", "success");
@@ -117,7 +122,7 @@ export default function (pi: ExtensionAPI) {
           ctx.ui.notify("pi-ensemble path released", "success");
           return;
         }
-        ctx.ui.notify("Usage: /ensemble init|status|note|send|inbox|board|claims|audit|timeline|overview|claim|release", "warning");
+        ctx.ui.notify("Usage: /ensemble init|status|note|send|inbox|board|claims|audit|timeline|overview|doctor|claim|release", "warning");
       } catch (err) {
         ctx.ui.notify(err instanceof Error ? err.message : String(err), "error");
       }
@@ -165,6 +170,7 @@ export default function (pi: ExtensionAPI) {
         else if (params.action === "audit") result = readAudit(root, { limit: params.limit ?? 50 });
         else if (params.action === "timeline") result = timeline(root, { limit: params.limit ?? 50 });
         else if (params.action === "overview") result = overview(root, { limit: params.limit ?? 10 });
+        else if (params.action === "doctor") result = doctor(root);
         else if (params.action === "claim") result = claim(root, { agent, targetPath: params.path, force: params.force === true });
         else if (params.action === "release") result = release(root, { agent, targetPath: params.path, force: params.force === true });
         return { content: [{ type: "text", text: asText(result) }], details: { result } };

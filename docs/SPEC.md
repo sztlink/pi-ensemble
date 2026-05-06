@@ -87,7 +87,11 @@ The Pi extension/tool accepts the same concept via `--root` in slash commands or
 
 ## Machine-readable output
 
-The CLI supports `--json` for operations that adapters commonly consume: `note`, `send`, `inbox`, `board`, `claims`, `audit`, `timeline`, `overview`, `claim`, and `release`. `status` is JSON by default.
+The CLI supports `--json` for operations that adapters commonly consume: `note`, `send`, `inbox`, `board`, `claims`, `audit`, `timeline`, `overview`, `doctor`, `claim`, and `release`. `status` is JSON by default.
+
+## Health checks
+
+`ensemble doctor` is read-only observability for ledger hygiene. It checks required protocol files, config version, audit JSONL parse issues, agent names, unread/retained inbox summaries, claim path/owner sanity, and nested `.pi-ensemble` folders under the selected root.
 
 ## Invariants
 

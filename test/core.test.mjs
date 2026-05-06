@@ -7,6 +7,7 @@ import path from 'node:path';
 import {
   claim,
   claims,
+  doctor,
   init,
   note,
   overview,
@@ -171,4 +172,17 @@ test('overview can infer last read from legacy audit records', () => {
   assert.equal(claude?.unread, 0);
   assert.equal(claude?.stale, 1);
   assert.ok(claude?.lastReadAt);
+});
+
+test('doctor reports ledger health and nested ledgers', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  fs.mkdirSync(path.join(root, 'tools', 'child', '.pi-ensemble'), { recursive: true });
+  fs.appendFileSync(path.join(root, '.pi-ensemble', 'audit.jsonl'), 'not-json\n');
+
+  const report = doctor(root);
+  assert.equal(report.ok, true);
+  assert.equal(report.checks.find(c => c.name === 'root')?.status, 'pass');
+  assert.equal(report.checks.find(c => c.name === 'nested-ledgers')?.status, 'warn');
+  assert.equal(report.checks.find(c => c.name === 'audit-jsonl')?.status, 'warn');
 });

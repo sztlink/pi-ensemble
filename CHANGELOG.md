@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.0-alpha.10
+
+- Added `ensemble doctor` read-only ledger health checks:
+  - required protocol files;
+  - config protocol version;
+  - audit JSONL parse issues;
+  - agent name validity;
+  - unread/retained inbox summaries;
+  - claim path/owner sanity;
+  - nested `.pi-ensemble` detection for root-confusion dogfood.
+- Added matching Pi command/tool action and tests.
+
 ## v0.1.0-alpha.9
 
 - Added dogfood ergonomics for retained inboxes:

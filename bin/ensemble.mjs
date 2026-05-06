@@ -3,6 +3,7 @@ import {
   claim,
   claims,
   defaultAgent,
+  doctor,
   init,
   note,
   overview,
@@ -30,6 +31,7 @@ Usage:
   ensemble audit [--limit N] [--json]
   ensemble timeline [--limit N] [--json]
   ensemble overview [--limit N] [--json]
+  ensemble doctor [--json]
   ensemble claim PATH [--agent NAME] [--force] [--json]
   ensemble release PATH [--agent NAME] [--force] [--json]
 `);
@@ -79,6 +81,19 @@ function formatOverview(value) {
   for (const claim of value.claims) lines.push(`  - ${claim.agent}: ${claim.path}`);
   lines.push('recent:');
   for (const row of value.recent) lines.push(`  - ${row.ts ?? '?'} ${row.action ?? '?'} — ${row.summary}`);
+  return lines.join('\n') + '\n';
+}
+
+function formatDoctor(value) {
+  const lines = [];
+  lines.push(`root: ${value.root}`);
+  lines.push(`ok: ${value.ok ? 'yes' : 'no'}`);
+  lines.push(`summary: ${value.summary.pass} pass, ${value.summary.info} info, ${value.summary.warn} warn, ${value.summary.fail} fail`);
+  for (const check of value.checks) {
+    const mark = check.status === 'pass' ? '✓' : check.status === 'fail' ? '✗' : check.status === 'warn' ? '!' : 'i';
+    lines.push(`${mark} ${check.name}: ${check.message}`);
+    if (check.details) lines.push(`  details: ${JSON.stringify(check.details)}`);
+  }
   return lines.join('\n') + '\n';
 }
 
@@ -142,6 +157,10 @@ try {
     const limit = Number(takeFlag(args, '--limit', '10'));
     const result = overview(root(), { limit: Number.isFinite(limit) ? limit : 10 });
     json ? printJson(result) : process.stdout.write(formatOverview(result));
+  } else if (cmd === 'doctor') {
+    const json = hasFlag(args, '--json');
+    const result = doctor(root());
+    json ? printJson(result) : process.stdout.write(formatDoctor(result));
   } else if (cmd === 'claim') {
     const agent = takeFlag(args, '--agent', defaultAgent());
     const force = hasFlag(args, '--force');

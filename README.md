@@ -33,7 +33,7 @@ See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for the shortest path. See [`docs
 ### Pi package from GitHub
 
 ```bash
-pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.9
+pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.10
 ```
 
 Reload Pi or start a new session, then run:
@@ -78,6 +78,7 @@ ensemble claims [--json]
 ensemble audit [--limit 50] [--json]
 ensemble timeline [--limit 50] [--json]
 ensemble overview [--limit 10] [--json]
+ensemble doctor [--json]
 ensemble claim ./worktree-or-path [--agent pi] [--force] [--json]
 ensemble release ./worktree-or-path [--agent pi] [--force] [--json]
 ```
@@ -85,6 +86,8 @@ ensemble release ./worktree-or-path [--agent pi] [--force] [--json]
 Allowed message types: `note`, `handoff`, `question`, `result`, `ack`.
 
 Inbox reads update per-agent `lastReadAt`. Use `--since-last-read` for focused wakeups: it prints only new messages, marks them read, and keeps retained history in `inbox.md`. `overview` reports both total retained messages and unread counts.
+
+Use `ensemble doctor` when a workflow feels off: it checks required files, protocol version, audit log parse health, claims, agent names, inbox state, and nested `.pi-ensemble` folders that can cause root confusion.
 
 Canonical/root override examples:
 

@@ -199,7 +199,7 @@ Pi, Claude Code, Codex, and a plain shell script can all participate in the same
 
 Goal: add visibility without turning the project into mission control.
 
-Status: first CLI/tool inspection landed with `ensemble overview` and `ensemble timeline`.
+Status: first CLI/tool inspection landed with `ensemble overview`, `ensemble timeline`, and `ensemble doctor`.
 
 Possible deliverables:
 
