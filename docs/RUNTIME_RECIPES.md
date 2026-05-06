@@ -7,8 +7,8 @@ These recipes show how different coding-agent runtimes can participate in the sa
 All runtimes should:
 
 1. Start from the project root, or set `PI_ENSEMBLE_ROOT=/path/to/project`.
-2. Read `ensemble status`.
-3. Read their inbox with `--no-clear` before clearing anything.
+2. Read `ensemble overview`.
+3. Read their new inbox items with `--since-last-read` before broad/clearing reads.
 4. Claim paths before edits.
 5. Record durable facts with `ensemble note`.
 6. Return exact result pointers with `ensemble send <target> ... --type result`.
@@ -37,7 +37,7 @@ Recommended Pi role:
 Claude can use the CLI directly:
 
 ```bash
-ensemble inbox --agent claude-lead --no-clear
+ensemble inbox --agent claude-lead --since-last-read
 ensemble send pi "Ack: received" --from claude-lead --type ack
 ensemble claim src/foo.ts --agent claude-lead
 ensemble note "Started Agent Teams review for src/foo.ts" --from claude-lead
@@ -53,7 +53,7 @@ Any terminal agent can use the CLI:
 
 ```bash
 cd /path/to/project
-ensemble inbox --agent codex --no-clear
+ensemble inbox --agent codex --since-last-read
 ensemble claim tests/foo.test.ts --agent codex
 # do work
 ensemble send pi "Result: tests added at tests/foo.test.ts" --from codex --type result
@@ -64,7 +64,7 @@ If the runtime prefers JSON:
 
 ```bash
 ensemble status
-ensemble inbox --agent codex --no-clear --json
+ensemble inbox --agent codex --since-last-read --json
 ensemble claim tests/foo.test.ts --agent codex --json
 ```
 
@@ -84,9 +84,10 @@ Use stable agent names such as `ci-bot`, `watcher`, `bench-runner`, or `github-m
 
 ## tmux wake adapter
 
-Use tmux only to wake a pane after writing the real message:
+Use tmux only to wake a pane after writing the real message. If the message already exists in the inbox, use `wake`; if not, `send` can write + wake in one step:
 
 ```bash
+ensemble-tmux wake claude-lead --message "Read your pi-ensemble inbox"
 ensemble-tmux send claude-lead "Read your pi-ensemble inbox" --from pi --type handoff
 ```
 

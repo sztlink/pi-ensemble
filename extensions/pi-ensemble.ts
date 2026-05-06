@@ -77,7 +77,10 @@ export default function (pi: ExtensionAPI) {
           return;
         }
         if (cmd === "inbox") {
-          const content = readInbox(rootFromCwd(ctx, explicitRoot), { agent: argv[0] || defaultAgent(), clear: true });
+          const sinceLastRead = argv.includes("--since-last-read");
+          const noClear = argv.includes("--no-clear") || sinceLastRead;
+          const agent = argv.find(arg => !arg.startsWith("--")) || defaultAgent();
+          const content = readInbox(rootFromCwd(ctx, explicitRoot), { agent, clear: !noClear, sinceLastRead });
           ctx.ui.notify(content || "Inbox empty", "info");
           return;
         }
@@ -139,6 +142,7 @@ export default function (pi: ExtensionAPI) {
       body: Type.Optional(Type.String({ description: "Message body" })),
       path: Type.Optional(Type.String({ description: "Path to claim or release" })),
       clear: Type.Optional(Type.Boolean({ description: "Clear inbox after reading", default: true })),
+      sinceLastRead: Type.Optional(Type.Boolean({ description: "Return only messages newer than this agent's last read timestamp", default: false })),
       force: Type.Optional(Type.Boolean({ description: "Override claim ownership conflicts", default: false })),
       limit: Type.Optional(Type.Number({ description: "Maximum audit records to return", default: 50 })),
       root: Type.Optional(Type.String({ description: "Workspace root or descendant containing .pi-ensemble" })),
@@ -155,7 +159,7 @@ export default function (pi: ExtensionAPI) {
         if (params.action === "status") result = status(root);
         else if (params.action === "note") result = note(root, { from: agent, body: params.body || "" });
         else if (params.action === "send") result = send(root, { from: agent, to: params.to, type: params.type || "handoff", body: params.body || "" });
-        else if (params.action === "inbox") result = readInbox(root, { agent, clear: params.clear !== false });
+        else if (params.action === "inbox") result = readInbox(root, { agent, clear: params.sinceLastRead === true ? false : params.clear !== false, sinceLastRead: params.sinceLastRead === true });
         else if (params.action === "board") result = readBoard(root);
         else if (params.action === "claims") result = claims(root);
         else if (params.action === "audit") result = readAudit(root, { limit: params.limit ?? 50 });

@@ -24,7 +24,7 @@ Usage:
   ensemble [--root PATH] status
   ensemble note MESSAGE [--from NAME] [--json]
   ensemble send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--json]
-  ensemble inbox [--agent NAME] [--no-clear] [--json]
+  ensemble inbox [--agent NAME] [--no-clear] [--since-last-read] [--clear] [--json]
   ensemble board [--json]
   ensemble claims [--json]
   ensemble audit [--limit N] [--json]
@@ -72,8 +72,9 @@ function formatOverview(value) {
   const lines = [];
   lines.push(`root: ${value.root}`);
   lines.push(`version: ${value.version}`);
-  lines.push(`agents: ${value.agents.map(a => `${a.agent}(${a.pending})`).join(', ') || 'none'}`);
-  lines.push(`pending: ${value.pending.map(a => a.agent).join(', ') || 'none'}`);
+  lines.push(`agents: ${value.agents.map(a => `${a.agent}(${a.pending} total, ${a.unread} unread)`).join(', ') || 'none'}`);
+  lines.push(`unread: ${value.unread.map(a => a.agent).join(', ') || 'none'}`);
+  lines.push(`retained: ${value.stale.map(a => a.agent).join(', ') || 'none'}`);
   lines.push(`claims: ${value.claims.length}`);
   for (const claim of value.claims) lines.push(`  - ${claim.agent}: ${claim.path}`);
   lines.push('recent:');
@@ -111,10 +112,13 @@ try {
     json ? printJson(result) : console.log(`sent to ${to}`);
   } else if (cmd === 'inbox') {
     const agent = takeFlag(args, '--agent', defaultAgent());
+    const sinceLastRead = hasFlag(args, '--since-last-read');
+    const clearFlag = hasFlag(args, '--clear');
     const noClear = hasFlag(args, '--no-clear');
     const json = hasFlag(args, '--json');
-    const content = readInbox(root(), { agent, clear: !noClear });
-    json ? printJson({ agent, clear: !noClear, content }) : process.stdout.write(content);
+    const clear = clearFlag ? true : sinceLastRead ? false : !noClear;
+    const content = readInbox(root(), { agent, clear, sinceLastRead });
+    json ? printJson({ agent, clear, sinceLastRead, content }) : process.stdout.write(content);
   } else if (cmd === 'board') {
     const json = hasFlag(args, '--json');
     const content = readBoard(root());

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.0-alpha.9
+
+- Added dogfood ergonomics for retained inboxes:
+  - per-agent `lastReadAt` state;
+  - `unread` and `stale` counts in status/overview JSON;
+  - `ensemble inbox --since-last-read` for focused new-message reads without clearing history.
+- Updated overview text to show `total` vs `unread` instead of treating all retained messages as urgent.
+- Updated tmux wake prompts to suggest `--since-last-read`, reducing duplicate/manual relay friction.
+
 ## v0.1.0-alpha.8
 
 - Added canonical root overrides for nested workspaces:

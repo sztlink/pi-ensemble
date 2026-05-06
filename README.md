@@ -33,7 +33,7 @@ See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for the shortest path. See [`docs
 ### Pi package from GitHub
 
 ```bash
-pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.7
+pi install git:github.com/sztlink/pi-ensemble@v0.1.0-alpha.9
 ```
 
 Reload Pi or start a new session, then run:
@@ -72,7 +72,7 @@ ensemble --root /path/to/workspace init [--agent pi]
 ensemble --root /path/to/workspace status
 ensemble note "message" [--from pi]
 ensemble send claude "handoff" [--from pi] [--type handoff]
-ensemble inbox [--agent pi] [--no-clear] [--json]
+ensemble inbox [--agent pi] [--no-clear] [--since-last-read] [--clear] [--json]
 ensemble board [--json]
 ensemble claims [--json]
 ensemble audit [--limit 50] [--json]
@@ -84,11 +84,13 @@ ensemble release ./worktree-or-path [--agent pi] [--force] [--json]
 
 Allowed message types: `note`, `handoff`, `question`, `result`, `ack`.
 
+Inbox reads update per-agent `lastReadAt`. Use `--since-last-read` for focused wakeups: it prints only new messages, marks them read, and keeps retained history in `inbox.md`. `overview` reports both total retained messages and unread counts.
+
 Canonical/root override examples:
 
 ```bash
 PI_ENSEMBLE_ROOT=/home/aya/implante ensemble overview
-ensemble --root /home/aya/implante inbox --agent pi --no-clear
+ensemble --root /home/aya/implante inbox --agent pi --since-last-read
 ```
 
 ## Pi commands

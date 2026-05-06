@@ -55,7 +55,7 @@ From the project root:
 
 ```bash
 ensemble status
-ensemble inbox --agent claude-lead --no-clear
+ensemble inbox --agent claude-lead --since-last-read
 ```
 
 If there is a new handoff, acknowledge it:
@@ -103,7 +103,7 @@ You are a Claude Code lead session participating in pi-ensemble.
 
 Before work:
 1. Run `ensemble status` from the project root.
-2. Read your inbox with `ensemble inbox --agent claude-lead --no-clear`.
+2. Read new inbox items with `ensemble inbox --agent claude-lead --since-last-read`.
 3. Ack the handoff with `ensemble send <sender> "Ack: ..." --from claude-lead --type ack`.
 4. Claim any paths you may edit.
 

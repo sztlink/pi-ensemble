@@ -50,7 +50,7 @@ ensemble send claude-lead "full handoff body" --from pi --type handoff
 For tmux, wake text should be shell-safe. Prefix with `#` so accidental paste into a shell pane is a harmless comment, while Pi/Claude still receive a readable markdown-style prompt:
 
 ```txt
-# pi-ensemble: new inbox item. Run: cd /repo && ensemble inbox --agent claude-lead --no-clear
+# pi-ensemble: new inbox item. Run: cd /repo && ensemble inbox --agent claude-lead --since-last-read
 ```
 
 Do not paste long instructions through tmux. Put them in the inbox.
@@ -89,7 +89,7 @@ Claude Code does not need a native plugin for v0.1. It participates through the 
 ```bash
 cd ~/implante
 ensemble status
-ensemble inbox --agent claude-lead --no-clear
+ensemble inbox --agent claude-lead --since-last-read
 ensemble note "durable fact" --from claude-lead
 ensemble send pi "handoff" --from claude-lead --type handoff
 ensemble claim ./path --agent claude-lead
@@ -98,8 +98,8 @@ ensemble release ./path --agent claude-lead
 
 Recommended Claude lead-session habit:
 
-1. On start, inspect `ensemble status` from the project root.
-2. If the lead has pending inbox items, read with `--no-clear` first.
+1. On start, inspect `ensemble overview` from the project root.
+2. If the lead has unread inbox items, read with `--since-last-read` first.
 3. If useful, use Claude Code Agent Teams internally.
 4. Mirror only durable milestones to `pi-ensemble`:
    - accepted task frame;
@@ -139,7 +139,7 @@ This preserves the invariant: deleting the adapter still leaves the collaboratio
 
 Dashboards should be read-only by default:
 
-- render `blackboard.md`, inbox pending counts, claims, and audit timeline;
+- render `blackboard.md`, inbox total/unread/stale counts, claims, and audit timeline;
 - do not become the source of truth;
 - if they mutate state, they should do so by invoking the same CLI/tool operations as everyone else.
 

@@ -106,6 +106,7 @@ test('overview and timeline provide read-only inspection shapes', () => {
 
   const o = overview(root, { limit: 3 });
   assert.equal(o.pending[0].agent, 'claude');
+  assert.equal(o.unread[0].agent, 'claude');
   assert.equal(o.claims[0].agent, 'pi');
   assert.ok(o.recent.length <= 3);
 
@@ -113,4 +114,61 @@ test('overview and timeline provide read-only inspection shapes', () => {
   assert.equal(rows.length, 1);
   assert.equal(rows[0].action, 'claim');
   assert.match(rows[0].summary, /claimed/);
+});
+
+test('non-clearing inbox reads mark unread messages as retained stale messages', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  send(root, { from: 'pi', to: 'claude', body: 'first' });
+
+  const first = overview(root);
+  assert.equal(first.agents.find(a => a.agent === 'claude')?.pending, 1);
+  assert.equal(first.agents.find(a => a.agent === 'claude')?.unread, 1);
+
+  const read = readInbox(root, { agent: 'claude', clear: false });
+  assert.match(read, /first/);
+
+  const afterRead = overview(root);
+  const claude = afterRead.agents.find(a => a.agent === 'claude');
+  assert.equal(claude?.pending, 1);
+  assert.equal(claude?.unread, 0);
+  assert.equal(claude?.stale, 1);
+  assert.equal(afterRead.unread.length, 0);
+  assert.equal(afterRead.stale[0].agent, 'claude');
+});
+
+test('sinceLastRead inbox returns only new messages without clearing retained history', async () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  send(root, { from: 'pi', to: 'claude', body: 'old' });
+  readInbox(root, { agent: 'claude', clear: false });
+  await new Promise(resolve => setTimeout(resolve, 5));
+  send(root, { from: 'pi', to: 'claude', body: 'new' });
+
+  const unread = readInbox(root, { agent: 'claude', clear: false, sinceLastRead: true });
+  assert.doesNotMatch(unread, /old/);
+  assert.match(unread, /new/);
+
+  const after = overview(root).agents.find(a => a.agent === 'claude');
+  assert.equal(after?.pending, 2);
+  assert.equal(after?.unread, 0);
+  assert.equal(after?.stale, 2);
+});
+
+test('overview can infer last read from legacy audit records', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  send(root, { from: 'pi', to: 'claude', body: 'old' });
+  readInbox(root, { agent: 'claude', clear: false });
+
+  const stateFile = path.join(root, '.pi-ensemble', 'agents', 'claude', 'state.json');
+  const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  delete state.lastReadAt;
+  fs.writeFileSync(stateFile, JSON.stringify(state, null, 2) + '\n');
+
+  const claude = overview(root).agents.find(a => a.agent === 'claude');
+  assert.equal(claude?.pending, 1);
+  assert.equal(claude?.unread, 0);
+  assert.equal(claude?.stale, 1);
+  assert.ok(claude?.lastReadAt);
 });

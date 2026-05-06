@@ -49,10 +49,10 @@ ensemble send claude-lead \
   --type handoff
 ```
 
-The receiver reads:
+The receiver reads only new messages since its last read:
 
 ```bash
-ensemble inbox --agent claude-lead --no-clear
+ensemble inbox --agent claude-lead --since-last-read
 ```
 
 When the receiver is done:
@@ -85,7 +85,7 @@ ensemble release lib/core.mjs --agent claude-lead
 Adapters can use JSON output:
 
 ```bash
-ensemble inbox --agent pi --no-clear --json
+ensemble inbox --agent pi --since-last-read --json
 ensemble claim docs/ROADMAP.md --agent pi --json
 ensemble claims --json
 ensemble audit --limit 20 --json
@@ -114,8 +114,8 @@ Recommended lead-session commands:
 
 ```bash
 cd ~/implante
-ensemble status
-ensemble inbox --agent claude-lead --no-clear
+ensemble overview
+ensemble inbox --agent claude-lead --since-last-read
 ensemble claim <path> --agent claude-lead
 ensemble note "Claude lead spawned Agent Teams internally; durable milestone only." --from claude-lead
 ensemble send pi "Result pointer: <path/url>" --from claude-lead --type result
@@ -125,9 +125,11 @@ Keep internal Agent Teams chatter inside Claude. Mirror only durable milestones,
 
 ## tmux wake adapter
 
-If `ensemble-tmux` is available, use it only to wake panes:
+If `ensemble-tmux` is available, use it only to wake panes. If you already wrote the long inbox message with `ensemble send`, use `wake` rather than `send` to avoid duplicate inbox entries:
 
 ```bash
+ensemble-tmux wake claude-lead --message "New handoff in inbox"
+# or write + wake in one step:
 ensemble-tmux send claude-lead "New handoff in inbox" --from pi --type handoff
 ```
 

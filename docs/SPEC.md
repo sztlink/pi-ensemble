@@ -50,6 +50,16 @@ Examples: `pi`, `claude`, `claude-lead`, `codex.1`.
 - `result`: completed output or artifact pointer
 - `ack`: acknowledgement / receipt
 
+## Inbox read state
+
+Each agent has `state.json`. `lastReadAt` is updated whenever that agent reads its inbox, including non-clearing reads. Status/overview expose:
+
+- `pending`: total retained message blocks in `inbox.md`;
+- `unread`: retained messages newer than `lastReadAt`;
+- `stale`: retained messages already read but not cleared.
+
+`ensemble inbox --since-last-read` returns only unread messages, marks them read, and does not clear retained history unless `--clear` is also passed.
+
 ## Claims
 
 `worktrees.json` maps resolved paths to current owner metadata:
@@ -91,7 +101,7 @@ The CLI supports `--json` for operations that adapters commonly consume: `note`,
 ## Pi package surface
 
 - Slash command: `/ensemble ...`
-- Tool: `ensemble({ action, agent, to, type, body, path, clear })`
+- Tool: `ensemble({ action, agent, to, type, body, path, clear, sinceLastRead })`
 - CLI: `ensemble ...`
 
 ## v0.1 done when

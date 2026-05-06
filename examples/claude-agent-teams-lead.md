@@ -12,7 +12,7 @@ Sender to report back to: <pi|human|other-agent>
 Protocol:
 1. `cd <PROJECT_ROOT>`
 2. Run `ensemble status`.
-3. Read your inbox: `ensemble inbox --agent claude-lead --no-clear`.
+3. Read new inbox items: `ensemble inbox --agent claude-lead --since-last-read`.
 4. Ack the handoff: `ensemble send <SENDER> "Ack: <task summary>" --from claude-lead --type ack`.
 5. Claim paths before any edits: `ensemble claim <path> --agent claude-lead`.
 6. If useful, create a Claude Code Agent Team internally. Use teammates only for independent work.
