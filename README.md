@@ -1,5 +1,7 @@
 # pi-ensemble
 
+[![CI](https://github.com/sztlink/pi-ensemble/actions/workflows/ci.yml/badge.svg)](https://github.com/sztlink/pi-ensemble/actions/workflows/ci.yml)
+
 Shared workspace coordination ledger for parallel coding agents.
 
 `pi-ensemble` is a small local coordination ledger: blackboard + mailbox + claims + audit for developers who run multiple coding agents side by side. It is designed for Pi, Claude Code, Codex, or any terminal agent that can read and write files.
