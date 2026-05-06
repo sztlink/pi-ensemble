@@ -81,6 +81,8 @@ Pi can use the package extension and tool directly. Claude Code and other termin
 
 `pi-ensemble` generalizes a simple bridge pattern: blackboard for durable shared facts, inboxes for handoffs, audit log for traceability. Integrations with tmux, watchers, or external dashboards should remain outside v0.1.
 
+See [`docs/LANDSCAPE.md`](docs/LANDSCAPE.md) for a benchmark of related Claude Code, Pi, tmux, and terminal-agent orchestrators and why `pi-ensemble` stays smaller: local file protocol, not mission control.
+
 ## Repository decision
 
 Recommended public home: `sztlink/pi-ensemble` as a standalone repository, not inside a benchmark or application repo. The protocol is generic and should not inherit TurboQuant-specific context.
