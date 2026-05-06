@@ -5,6 +5,7 @@ import {
   defaultAgent,
   init,
   note,
+  overview,
   readAudit,
   readBoard,
   readInbox,
@@ -12,6 +13,7 @@ import {
   requireWorkspaceRoot,
   send,
   status,
+  timeline,
 } from '../lib/core.mjs';
 
 function usage() {
@@ -26,6 +28,8 @@ Usage:
   ensemble board [--json]
   ensemble claims [--json]
   ensemble audit [--limit N] [--json]
+  ensemble timeline [--limit N] [--json]
+  ensemble overview [--limit N] [--json]
   ensemble claim PATH [--agent NAME] [--force] [--json]
   ensemble release PATH [--agent NAME] [--force] [--json]
 `);
@@ -52,6 +56,23 @@ function root() {
 
 function printJson(value) {
   console.log(JSON.stringify(value, null, 2));
+}
+
+function formatTimeline(rows) {
+  return rows.map(row => `${row.ts ?? '?'} ${row.action ?? '?'} — ${row.summary}`).join('\n') + (rows.length ? '\n' : '');
+}
+
+function formatOverview(value) {
+  const lines = [];
+  lines.push(`root: ${value.root}`);
+  lines.push(`version: ${value.version}`);
+  lines.push(`agents: ${value.agents.map(a => `${a.agent}(${a.pending})`).join(', ') || 'none'}`);
+  lines.push(`pending: ${value.pending.map(a => a.agent).join(', ') || 'none'}`);
+  lines.push(`claims: ${value.claims.length}`);
+  for (const claim of value.claims) lines.push(`  - ${claim.agent}: ${claim.path}`);
+  lines.push('recent:');
+  for (const row of value.recent) lines.push(`  - ${row.ts ?? '?'} ${row.action ?? '?'} — ${row.summary}`);
+  return lines.join('\n') + '\n';
 }
 
 try {
@@ -99,6 +120,16 @@ try {
     const limit = Number(takeFlag(args, '--limit', '50'));
     const result = readAudit(root(), { limit: Number.isFinite(limit) ? limit : 50 });
     json ? printJson(result) : process.stdout.write(result.map(r => JSON.stringify(r)).join('\n') + (result.length ? '\n' : ''));
+  } else if (cmd === 'timeline') {
+    const json = hasFlag(args, '--json');
+    const limit = Number(takeFlag(args, '--limit', '50'));
+    const result = timeline(root(), { limit: Number.isFinite(limit) ? limit : 50 });
+    json ? printJson(result) : process.stdout.write(formatTimeline(result));
+  } else if (cmd === 'overview') {
+    const json = hasFlag(args, '--json');
+    const limit = Number(takeFlag(args, '--limit', '10'));
+    const result = overview(root(), { limit: Number.isFinite(limit) ? limit : 10 });
+    json ? printJson(result) : process.stdout.write(formatOverview(result));
   } else if (cmd === 'claim') {
     const agent = takeFlag(args, '--agent', defaultAgent());
     const force = hasFlag(args, '--force');

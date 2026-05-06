@@ -64,7 +64,7 @@ A path claimed by another agent cannot be overwritten or released unless the cal
 
 ## Machine-readable output
 
-The CLI supports `--json` for operations that adapters commonly consume: `note`, `send`, `inbox`, `board`, `claims`, `audit`, `claim`, and `release`. `status` is JSON by default.
+The CLI supports `--json` for operations that adapters commonly consume: `note`, `send`, `inbox`, `board`, `claims`, `audit`, `timeline`, `overview`, `claim`, and `release`. `status` is JSON by default.
 
 ## Invariants
 

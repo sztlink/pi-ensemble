@@ -9,12 +9,14 @@ import {
   claims,
   init,
   note,
+  overview,
   readAudit,
   readBoard,
   readInbox,
   release,
   send,
   status,
+  timeline,
 } from '../lib/core.mjs';
 
 function tempRoot() {
@@ -94,4 +96,21 @@ test('readAudit returns parsed audit records with limit', () => {
   const records = readAudit(root, { limit: 2 });
   assert.equal(records.length, 2);
   assert.deepEqual(records.map(r => r.action), ['note', 'send']);
+});
+
+test('overview and timeline provide read-only inspection shapes', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  send(root, { from: 'pi', to: 'claude', body: 'please inspect' });
+  claim(root, { agent: 'pi', targetPath: 'docs' });
+
+  const o = overview(root, { limit: 3 });
+  assert.equal(o.pending[0].agent, 'claude');
+  assert.equal(o.claims[0].agent, 'pi');
+  assert.ok(o.recent.length <= 3);
+
+  const rows = timeline(root, { limit: 1 });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].action, 'claim');
+  assert.match(rows[0].summary, /claimed/);
 });
