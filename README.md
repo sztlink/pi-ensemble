@@ -79,7 +79,7 @@ See [`SECURITY.md`](SECURITY.md). In short: no network, no spawning, no command 
 
 ## Hybrid runtimes
 
-Pi can use the package extension and tool directly. Claude Code can participate directly or through a lead session that also uses Agent Teams internally. Codex and other terminal agents can participate through the same CLI/files. Tmux wakeups should remain an adapter outside the core protocol. See [`docs/ADAPTERS.md`](docs/ADAPTERS.md).
+Pi can use the package extension and tool directly. Claude Code can participate directly or through a lead session that also uses Agent Teams internally. Codex and other terminal agents can participate through the same CLI/files. Tmux wakeups should remain an adapter outside the core protocol. See [`docs/ADAPTERS.md`](docs/ADAPTERS.md) and [`examples/ensemble-tmux`](examples/ensemble-tmux).
 
 ## Relationship to existing workflows
 

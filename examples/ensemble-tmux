@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Example tmux wake adapter for pi-ensemble.
+# Core state stays in .pi-ensemble/. This script only writes messages via the
+# CLI and optionally pastes shell-safe wake prompts into tmux panes.
+
+CONFIG="${ENSEMBLE_TMUX_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/pi-ensemble/tmux.env}"
+if [[ -f "$CONFIG" ]]; then
+  # shellcheck source=/dev/null
+  source "$CONFIG"
+fi
+
+ROOT="${ENSEMBLE_ROOT:-$(pwd)}"
+FROM="${ENSEMBLE_FROM:-${ENSEMBLE_DEFAULT_FROM:-manual}}"
+
+usage() {
+  cat <<'HELP'
+ensemble-tmux — example tmux wake adapter for pi-ensemble
+
+Commands:
+  ensemble-tmux status
+  ensemble-tmux panes
+  ensemble-tmux wake AGENT [--message TEXT] [--pane TARGET]
+  ensemble-tmux send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--no-wake] [--pane TARGET]
+  ensemble-tmux note MESSAGE [--from NAME]
+
+Config:
+  $XDG_CONFIG_HOME/pi-ensemble/tmux.env or $HOME/.config/pi-ensemble/tmux.env
+  ENSEMBLE_ROOT=/path/to/workspace
+  ENSEMBLE_TMUX_<AGENT>_PANE='session:window.pane'
+
+Example:
+  ENSEMBLE_TMUX_CLAUDE_LEAD_PANE='myproject:1.1'
+HELP
+}
+
+agent_pane() {
+  local agent="$1"
+  local upper
+  upper="$(printf '%s' "$agent" | tr '[:lower:]-' '[:upper:]_')"
+  local var="ENSEMBLE_TMUX_${upper}_PANE"
+  printf '%s' "${!var:-}"
+}
+
+send_keys() {
+  local pane="$1"
+  local text="$2"
+  printf '%s' "$text" | tmux load-buffer -
+  tmux paste-buffer -t "$pane"
+  tmux send-keys -t "$pane" Enter
+}
+
+wake_agent() {
+  local agent="$1"; shift || true
+  local pane=""
+  local message=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --pane) pane="${2:-}"; shift 2 ;;
+      --message) message="${2:-}"; shift 2 ;;
+      *) message="$*"; break ;;
+    esac
+  done
+
+  pane="${pane:-$(agent_pane "$agent")}" 
+  [[ -n "$pane" ]] || { echo "No tmux pane configured for agent '$agent'" >&2; exit 2; }
+  tmux has-session -t "$pane" 2>/dev/null || { echo "tmux target not found: $pane" >&2; exit 1; }
+
+  # Shell-safe: if this lands in a bash pane, it is just a comment.
+  # Agent-safe: if this lands in a Pi/Claude prompt, it is readable markdown.
+  local prompt="# pi-ensemble: new inbox item. Run: cd $ROOT && ensemble inbox --agent $agent --no-clear"
+  if [[ -n "$message" ]]; then
+    prompt="$prompt — $message"
+  fi
+  send_keys "$pane" "$prompt"
+  echo "woke $agent ($pane)"
+}
+
+cmd="${1:-help}"
+shift || true
+case "$cmd" in
+  status)
+    echo "ROOT=$ROOT"
+    echo "CONFIG=$CONFIG"
+    (cd "$ROOT" && ensemble status)
+    echo
+    echo "tmux panes:"
+    tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command} #{pane_current_path} #{pane_title}' 2>/dev/null || true
+    ;;
+  panes)
+    tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command} #{pane_current_path} #{pane_title}'
+    ;;
+  wake)
+    [[ $# -ge 1 ]] || { echo "usage: ensemble-tmux wake AGENT [--message TEXT] [--pane TARGET]" >&2; exit 2; }
+    agent="$1"; shift
+    wake_agent "$agent" "$@"
+    ;;
+  send)
+    [[ $# -ge 2 ]] || { echo "usage: ensemble-tmux send AGENT MESSAGE [--from NAME] [--type TYPE] [--no-wake] [--pane TARGET]" >&2; exit 2; }
+    agent="$1"; shift
+    type="handoff"
+    no_wake=0
+    pane=""
+    args=()
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --from) FROM="${2:-}"; shift 2 ;;
+        --type) type="${2:-}"; shift 2 ;;
+        --no-wake) no_wake=1; shift ;;
+        --pane) pane="${2:-}"; shift 2 ;;
+        *) args+=("$1"); shift ;;
+      esac
+    done
+    message="${args[*]}"
+    [[ -n "$message" ]] || { echo "message is required" >&2; exit 2; }
+    (cd "$ROOT" && ensemble send "$agent" "$message" --from "$FROM" --type "$type")
+    if [[ "$no_wake" != 1 ]]; then
+      wake_agent "$agent" --pane "$pane" --message "from $FROM [$type]"
+    fi
+    ;;
+  note)
+    [[ $# -ge 1 ]] || { echo "usage: ensemble-tmux note MESSAGE [--from NAME]" >&2; exit 2; }
+    args=()
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --from) FROM="${2:-}"; shift 2 ;;
+        *) args+=("$1"); shift ;;
+      esac
+    done
+    (cd "$ROOT" && ensemble note "${args[*]}" --from "$FROM")
+    ;;
+  help|--help|-h|*)
+    usage
+    ;;
+esac
