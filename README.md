@@ -73,6 +73,10 @@ It also exposes an `ensemble` tool for the parent agent to perform the same file
 
 See [`SECURITY.md`](SECURITY.md). In short: no network, no spawning, no command execution, no credentials, no hidden persistence, no remote sessions, no automatic routing.
 
+## Hybrid runtimes
+
+Pi can use the package extension and tool directly. Claude Code and other terminal agents can participate through the same CLI/files. Tmux wakeups should remain an adapter outside the core protocol. See [`docs/ADAPTERS.md`](docs/ADAPTERS.md).
+
 ## Relationship to existing workflows
 
 `pi-ensemble` generalizes a simple bridge pattern: blackboard for durable shared facts, inboxes for handoffs, audit log for traceability. Integrations with tmux, watchers, or external dashboards should remain outside v0.1.
