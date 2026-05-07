@@ -198,6 +198,7 @@ test('messages get ids and can be acked and resolved through audit events', () =
 
   const inbox = readInbox(root, { agent: 'claude', clear: false });
   assert.match(inbox, new RegExp(`\\{#${sent.messageId}\\}`));
+  assert.match(inbox, new RegExp(`--reply-to ${sent.messageId}`));
 
   ack(root, { from: 'claude', messageId: sent.messageId, body: 'received' });
   assert.equal(messages(root, { open: true })[0].status, 'acked');
@@ -205,5 +206,36 @@ test('messages get ids and can be acked and resolved through audit events', () =
 
   done(root, { from: 'pi', messageId: sent.messageId, body: 'closed' });
   assert.equal(messages(root)[0].status, 'done');
+  assert.equal(messages(root, { open: true }).length, 0);
+});
+
+test('terminal replies do not create suspense and close their parent message', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  const question = send(root, { from: 'pi', to: 'claude', type: 'question', body: 'Fetch X.' });
+
+  const result = send(root, {
+    from: 'claude',
+    to: 'pi',
+    type: 'result',
+    body: 'X fetched.',
+    replyTo: question.messageId,
+  });
+
+  const rows = messages(root, { limit: 0 });
+  const parent = rows.find(row => row.messageId === question.messageId);
+  const child = rows.find(row => row.messageId === result.messageId);
+  assert.equal(parent?.status, 'done');
+  assert.equal(parent?.doneBy, 'claude');
+  assert.equal(child?.status, 'done');
+  assert.equal(messages(root, { open: true }).length, 0);
+});
+
+test('terminal result messages are not listed as open even without replyTo', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  const result = send(root, { from: 'claude', to: 'pi', type: 'result', body: 'unsolicited result' });
+
+  assert.equal(messages(root).find(row => row.messageId === result.messageId)?.status, 'done');
   assert.equal(messages(root, { open: true }).length, 0);
 });

@@ -75,9 +75,10 @@ export default function (pi: ExtensionAPI) {
         }
         if (cmd === "send") {
           const type = takeFlag(argv, "--type", "handoff") as "note" | "handoff" | "question" | "result" | "ack";
+          const replyTo = takeFlag(argv, "--reply-to", undefined);
           const to = argv.shift();
-          const result = send(rootFromCwd(ctx, explicitRoot), { from: defaultAgent(), to, type, body: argv.join(" ") });
-          ctx.ui.notify(`pi-ensemble sent to ${to}: ${result.messageId}`, "success");
+          const result = send(rootFromCwd(ctx, explicitRoot), { from: defaultAgent(), to, type, body: argv.join(" "), replyTo });
+          ctx.ui.notify(`pi-ensemble sent to ${to}: ${result.messageId}${replyTo ? ` (reply to ${replyTo})` : ""}`, "success");
           return;
         }
         if (cmd === "ack") {
@@ -171,6 +172,7 @@ export default function (pi: ExtensionAPI) {
       type: Type.Optional(MessageType),
       body: Type.Optional(Type.String({ description: "Message body" })),
       messageId: Type.Optional(Type.String({ description: "Message id for ack/done" })),
+      replyTo: Type.Optional(Type.String({ description: "Message id this send answers; result/ack/note auto-close the parent" })),
       path: Type.Optional(Type.String({ description: "Path to claim or release" })),
       clear: Type.Optional(Type.Boolean({ description: "Clear inbox after reading", default: true })),
       sinceLastRead: Type.Optional(Type.Boolean({ description: "Return only messages newer than this agent's last read timestamp", default: false })),
@@ -190,7 +192,7 @@ export default function (pi: ExtensionAPI) {
         let result: unknown;
         if (params.action === "status") result = status(root);
         else if (params.action === "note") result = note(root, { from: agent, body: params.body || "" });
-        else if (params.action === "send") result = send(root, { from: agent, to: params.to, type: params.type || "handoff", body: params.body || "" });
+        else if (params.action === "send") result = send(root, { from: agent, to: params.to, type: params.type || "handoff", body: params.body || "", replyTo: params.replyTo });
         else if (params.action === "ack") result = ack(root, { from: agent, messageId: params.messageId, body: params.body || "" });
         else if (params.action === "done") result = done(root, { from: agent, messageId: params.messageId, body: params.body || "" });
         else if (params.action === "messages") result = messages(root, { limit: params.limit ?? 50, open: params.open === true });

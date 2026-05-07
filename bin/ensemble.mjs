@@ -27,7 +27,7 @@ Usage:
   ensemble [--root PATH] init [--agent NAME]
   ensemble [--root PATH] status
   ensemble note MESSAGE [--from NAME] [--json]
-  ensemble send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--json]
+  ensemble send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--reply-to MESSAGE_ID] [--json]
   ensemble ack MESSAGE_ID [--from NAME] [--body TEXT] [--json]
   ensemble done MESSAGE_ID [--from NAME] [--body TEXT] [--json]
   ensemble messages [--limit N] [--open] [--json]
@@ -93,7 +93,7 @@ function formatOverview(value) {
 }
 
 function formatMessages(rows) {
-  return rows.map(row => `${row.messageId} ${row.status} — ${row.from ?? '?'} → ${row.to ?? '?'} [${row.type ?? '?'}]${row.doneBy ? ` done by ${row.doneBy}` : ''}`).join('\n') + (rows.length ? '\n' : '');
+  return rows.map(row => `${row.messageId} ${row.status} — ${row.from ?? '?'} → ${row.to ?? '?'} [${row.type ?? '?'}]${row.replyTo ? ` reply-to ${row.replyTo}` : ''}${row.doneBy ? ` done by ${row.doneBy}` : ''}`).join('\n') + (rows.length ? '\n' : '');
 }
 
 function formatDoctor(value) {
@@ -132,11 +132,12 @@ try {
   } else if (cmd === 'send') {
     const from = takeFlag(args, '--from', defaultAgent());
     const type = takeFlag(args, '--type', 'handoff');
+    const replyTo = takeFlag(args, '--reply-to', undefined);
     const json = hasFlag(args, '--json');
     const to = args.shift();
     const body = args.join(' ');
-    const result = send(root(), { from, to, type, body });
-    json ? printJson(result) : console.log(`sent to ${to}: ${result.messageId}`);
+    const result = send(root(), { from, to, type, body, replyTo });
+    json ? printJson(result) : console.log(`sent to ${to}: ${result.messageId}${replyTo ? ` (reply to ${replyTo})` : ''}`);
   } else if (cmd === 'ack') {
     const from = takeFlag(args, '--from', defaultAgent());
     const body = takeFlag(args, '--body', '');

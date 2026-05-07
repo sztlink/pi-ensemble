@@ -58,14 +58,16 @@ The receiver reads only new messages since its last read:
 ensemble inbox --agent claude-lead --since-last-read
 ```
 
-When the receiver is done:
+When the receiver is done, reply to the original message id. This keeps the ledger from leaving questions/handoffs suspended:
 
 ```bash
-ensemble send pi "Result: findings saved at docs/review.md" --from claude-lead --type result
-# Optional lifecycle trace:
+ensemble send pi "Result: findings saved at docs/review.md" --from claude-lead --type result --reply-to msg_xxx
+# Optional manual lifecycle trace when not using --reply-to:
 ensemble ack msg_xxx --from claude-lead --body "received"
 ensemble done msg_xxx --from pi --body "resolved"
 ```
+
+`result`, `ack`, and `note` sends are terminal by default. With `--reply-to`, they automatically close the parent message in `ensemble messages --open`.
 
 ## 4. Claim paths before concurrent work
 
@@ -126,7 +128,7 @@ ensemble overview
 ensemble inbox --agent claude-lead --since-last-read
 ensemble claim <path> --agent claude-lead
 ensemble note "Claude lead spawned Agent Teams internally; durable milestone only." --from claude-lead
-ensemble send pi "Result pointer: <path/url>" --from claude-lead --type result
+ensemble send pi "Result pointer: <path/url>" --from claude-lead --type result --reply-to msg_xxx
 ```
 
 Keep internal Agent Teams chatter inside Claude. Mirror only durable milestones, ownership, and outcomes into `pi-ensemble`.

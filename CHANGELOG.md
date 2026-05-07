@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added `--reply-to MESSAGE_ID` for `ensemble send`.
+- Actionable messages (`question`, `handoff`) now include reply hints in inbox markdown.
+- Terminal sends (`result`, `ack`, `note`) are not shown as open messages; terminal replies with `--reply-to` auto-close the parent message.
+- Added tests to prevent result messages from lingering as unresolved suspense.
+
 ## v0.1.0-alpha.13
 
 - Added npm-first install docs now that `@sztlink/pi-ensemble` is published.

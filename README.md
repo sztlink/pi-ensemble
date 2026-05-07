@@ -83,6 +83,7 @@ ensemble --root /path/to/workspace init [--agent pi]
 ensemble --root /path/to/workspace status
 ensemble note "message" [--from pi]
 ensemble send claude "handoff" [--from pi] [--type handoff]
+ensemble send pi "result" --from claude --type result --reply-to msg_xxx
 ensemble ack msg_xxx [--from claude] [--body "received"]
 ensemble done msg_xxx [--from pi] [--body "resolved"]
 ensemble messages [--open] [--limit 50] [--json]
@@ -103,7 +104,7 @@ Inbox reads update per-agent `lastReadAt`. Use `--since-last-read` for focused w
 
 Use `ensemble doctor` when a workflow feels off: it checks required files, protocol version, audit log parse health, claims, agent names, inbox state, and nested `.pi-ensemble` folders that can cause root confusion.
 
-Every `send` returns a message id and writes an inbox anchor like `{#msg_...}`. Use `ack` and `done` for lightweight traceability of handoffs/questions. They append audit events only; they do not schedule, route, or supervise agents.
+Every `send` returns a message id and writes an inbox anchor like `{#msg_...}`. Actionable messages (`question`, `handoff`) include a reply hint in the inbox. Reply with `--reply-to msg_xxx`; terminal replies (`result`, `ack`, `note`) are treated as done and automatically close their parent message when `--reply-to` is present. Use explicit `ack` and `done` when you need manual traceability. These audit events do not schedule, route, or supervise agents.
 
 Canonical/root override examples:
 
@@ -111,7 +112,7 @@ Canonical/root override examples:
 # Neutral-root runtime: stay wherever the agent naturally starts, point at the ledger.
 PI_ENSEMBLE_ROOT=/home/aya/implante ensemble overview
 PI_ENSEMBLE_ROOT=/home/aya/implante ensemble inbox --agent claude --since-last-read
-PI_ENSEMBLE_ROOT=/home/aya/implante ensemble send pi "Result: ..." --from claude --type result
+PI_ENSEMBLE_ROOT=/home/aya/implante ensemble send pi "Result: ..." --from claude --type result --reply-to msg_xxx
 
 # Equivalent explicit flag:
 ensemble --root /home/aya/implante inbox --agent pi --since-last-read
@@ -125,7 +126,7 @@ When installed as a Pi package, the extension exposes:
 /ensemble init
 /ensemble status
 /ensemble note <message>
-/ensemble send <agent> <message> [--type note|handoff|question|result|ack]
+/ensemble send <agent> <message> [--type note|handoff|question|result|ack] [--reply-to msg_xxx]
 /ensemble inbox
 /ensemble board
 /ensemble claim <path>
