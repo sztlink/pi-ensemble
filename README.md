@@ -143,6 +143,17 @@ See [`SECURITY.md`](SECURITY.md). In short: no network, no spawning, no command 
 
 Pi can use the package extension and tool directly. Claude Code can participate directly or through a lead session that also uses Agent Teams internally. Codex and other terminal agents can participate through the same CLI/files. Tmux wakeups should remain an adapter outside the core protocol. See [`docs/ADAPTERS.md`](docs/ADAPTERS.md) and [`examples/ensemble-tmux`](examples/ensemble-tmux).
 
+For operational handoffs where silence is failure, use the tmux adapter's supervised path instead of a blind inbox write:
+
+```bash
+examples/ensemble-tmux task claude-lead \
+  "Read your inbox, do the task, and reply with result." \
+  --from pi \
+  --timeout 600
+```
+
+`task` = send to ledger + wake configured pane + wait for a `--reply-to` result in the audit log. The core remains file-only; the adapter makes missing panes and missing replies fail visibly.
+
 ## Discovery / Pi package gallery
 
 `pi-ensemble` is published to npm with the `pi-package` keyword and a `pi.extensions` manifest, so Pi can install it directly and package indexes can discover it:

@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Example tmux wake adapter for pi-ensemble.
-# Core state stays in .pi-ensemble/. This script only writes messages via the
-# CLI and optionally pastes shell-safe wake prompts into tmux panes.
-
 CONFIG="${ENSEMBLE_TMUX_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/pi-ensemble/tmux.env}"
 if [[ -f "$CONFIG" ]]; then
   # shellcheck source=/dev/null
@@ -16,30 +12,35 @@ FROM="${ENSEMBLE_FROM:-${ENSEMBLE_DEFAULT_FROM:-manual}}"
 
 usage() {
   cat <<'HELP'
-ensemble-tmux — example tmux wake adapter for pi-ensemble
+ensemble-tmux — tmux wake adapter for pi-ensemble
+
+Core state stays in .pi-ensemble/. This script is the tmux wake/wait adapter.
+Use `send --wait` or `task` when silence would be operationally ambiguous.
 
 Commands:
   ensemble-tmux status
   ensemble-tmux panes
   ensemble-tmux wake AGENT [--message TEXT] [--pane TARGET]
-  ensemble-tmux send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--no-wake] [--pane TARGET]
+  ensemble-tmux send AGENT MESSAGE [--from NAME] [--type note|handoff|question|result|ack] [--no-wake] [--pane TARGET] [--wait] [--timeout SEC] [--interval SEC]
+  ensemble-tmux task AGENT MESSAGE [--from NAME] [--type TYPE] [--pane TARGET] [--timeout SEC] [--interval SEC]
+  ensemble-tmux wait MESSAGE_ID [--timeout SEC] [--interval SEC]
   ensemble-tmux note MESSAGE [--from NAME]
 
 Config:
   $XDG_CONFIG_HOME/pi-ensemble/tmux.env or $HOME/.config/pi-ensemble/tmux.env
   ENSEMBLE_ROOT=/path/to/workspace
-  ENSEMBLE_TMUX_<AGENT>_PANE='session:window.pane'
-
-Example:
-  ENSEMBLE_TMUX_CLAUDE_LEAD_PANE='myproject:1.1'
+  ENSEMBLE_TMUX_<AGENT>_PANE overrides, e.g. ENSEMBLE_TMUX_CLAUDE_PANE='turboquant:1.1'
 HELP
 }
 
-agent_pane() {
+agent_var_name() {
   local agent="$1"
-  local upper
-  upper="$(printf '%s' "$agent" | tr '[:lower:]-' '[:upper:]_')"
-  local var="ENSEMBLE_TMUX_${upper}_PANE"
+  printf 'ENSEMBLE_TMUX_%s_PANE' "$(printf '%s' "$agent" | tr '[:lower:]-' '[:upper:]_')"
+}
+
+agent_pane() {
+  local var
+  var="$(agent_var_name "$1")"
   printf '%s' "${!var:-}"
 }
 
@@ -62,19 +63,112 @@ wake_agent() {
       *) message="$*"; break ;;
     esac
   done
-
   pane="${pane:-$(agent_pane "$agent")}" 
-  [[ -n "$pane" ]] || { echo "No tmux pane configured for agent '$agent'" >&2; exit 2; }
+  [[ -n "$pane" ]] || { echo "No tmux pane configured for agent '$agent' ($(agent_var_name "$agent"))" >&2; exit 2; }
   tmux has-session -t "$pane" 2>/dev/null || { echo "tmux target not found: $pane" >&2; exit 1; }
-
-  # Shell-safe: if this lands in a bash pane, it is just a comment.
-  # Agent-safe: if this lands in a Pi/Claude prompt, it is readable markdown.
   local prompt="# pi-ensemble: new inbox item. Run from any cwd: PI_ENSEMBLE_ROOT=$ROOT ensemble inbox --agent $agent --since-last-read"
   if [[ -n "$message" ]]; then
     prompt="$prompt — $message"
   fi
   send_keys "$pane" "$prompt"
   echo "woke $agent ($pane)"
+}
+
+message_id_from_json() {
+  node -e 'let s=""; process.stdin.on("data", c => s += c); process.stdin.on("end", () => { const j = JSON.parse(s); if (j.messageId) console.log(j.messageId); });'
+}
+
+find_reply_json() {
+  local message_id="$1"
+  node - "$ROOT" "$message_id" <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const root = process.argv[2];
+const messageId = process.argv[3];
+const auditPath = path.join(root, '.pi-ensemble', 'audit.jsonl');
+if (!fs.existsSync(auditPath)) process.exit(1);
+const rows = fs.readFileSync(auditPath, 'utf8').trim().split('\n').filter(Boolean).map(line => {
+  try { return JSON.parse(line); } catch { return null; }
+}).filter(Boolean).reverse();
+const reply = rows.find(r =>
+  (r.action === 'send' && r.replyTo === messageId && ['result', 'ack', 'note'].includes(r.type)) ||
+  ((r.action === 'done' || r.action === 'ack') && r.messageId === messageId)
+);
+if (!reply) process.exit(1);
+console.log(JSON.stringify(reply, null, 2));
+NODE
+}
+
+wait_for_reply() {
+  local message_id="$1"
+  local timeout="${2:-600}"
+  local interval="${3:-5}"
+  local start now elapsed
+  start="$(date +%s)"
+  echo "waiting for reply to $message_id (timeout ${timeout}s)..." >&2
+  while true; do
+    if find_reply_json "$message_id"; then
+      return 0
+    fi
+    now="$(date +%s)"
+    elapsed=$((now - start))
+    if (( elapsed >= timeout )); then
+      echo "timeout waiting for reply to $message_id after ${elapsed}s" >&2
+      return 124
+    fi
+    sleep "$interval"
+  done
+}
+
+list_configured_panes() {
+  compgen -v ENSEMBLE_TMUX_ | grep '_PANE$' | sort | while read -r var; do
+    local pane="${!var:-}"
+    [[ -n "$pane" ]] || continue
+    local agent="${var#ENSEMBLE_TMUX_}"
+    agent="${agent%_PANE}"
+    agent="$(printf '%s' "$agent" | tr '[:upper:]_' '[:lower:]-')"
+    printf '%s=%s ' "$agent" "$pane"
+    tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command} #{pane_current_path} #{pane_title}' 2>/dev/null | grep -F -- "${pane} " || true
+  done
+}
+
+send_command() {
+  local agent="$1"; shift
+  local type="handoff"
+  local no_wake=0
+  local pane=""
+  local wait=0
+  local timeout=600
+  local interval=5
+  local args=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --from) FROM="${2:-}"; shift 2 ;;
+      --type) type="${2:-}"; shift 2 ;;
+      --no-wake) no_wake=1; shift ;;
+      --pane) pane="${2:-}"; shift 2 ;;
+      --wait) wait=1; shift ;;
+      --timeout) timeout="${2:-600}"; shift 2 ;;
+      --interval) interval="${2:-5}"; shift 2 ;;
+      *) args+=("$1"); shift ;;
+    esac
+  done
+  local message="${args[*]}"
+  [[ -n "$message" ]] || { echo "message is required" >&2; exit 2; }
+
+  local send_json message_id
+  send_json="$(cd "$ROOT" && ensemble send "$agent" "$message" --from "$FROM" --type "$type" --json)"
+  echo "$send_json"
+  message_id="$(printf '%s' "$send_json" | message_id_from_json)"
+  [[ -n "$message_id" ]] || { echo "failed to parse message id" >&2; exit 1; }
+
+  if [[ "$no_wake" != 1 ]]; then
+    local reply_hint="from $FROM [$type] id=$message_id. REQUIRED when done: PI_ENSEMBLE_ROOT=$ROOT ensemble send $FROM \"<result>\" --from $agent --type result --reply-to $message_id"
+    wake_agent "$agent" --pane "$pane" --message "$reply_hint"
+  fi
+  if [[ "$wait" == 1 ]]; then
+    wait_for_reply "$message_id" "$timeout" "$interval"
+  fi
 }
 
 cmd="${1:-help}"
@@ -86,7 +180,7 @@ case "$cmd" in
     (cd "$ROOT" && ensemble status)
     echo
     echo "tmux panes:"
-    tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command} #{pane_current_path} #{pane_title}' 2>/dev/null || true
+    list_configured_panes
     ;;
   panes)
     tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command} #{pane_current_path} #{pane_title}'
@@ -97,27 +191,29 @@ case "$cmd" in
     wake_agent "$agent" "$@"
     ;;
   send)
-    [[ $# -ge 2 ]] || { echo "usage: ensemble-tmux send AGENT MESSAGE [--from NAME] [--type TYPE] [--no-wake] [--pane TARGET]" >&2; exit 2; }
+    [[ $# -ge 2 ]] || { echo "usage: ensemble-tmux send AGENT MESSAGE [--from NAME] [--type TYPE] [--no-wake] [--pane TARGET] [--wait]" >&2; exit 2; }
     agent="$1"; shift
-    type="handoff"
-    no_wake=0
-    pane=""
-    args=()
+    send_command "$agent" "$@"
+    ;;
+  task)
+    [[ $# -ge 2 ]] || { echo "usage: ensemble-tmux task AGENT MESSAGE [--from NAME] [--type TYPE] [--pane TARGET] [--timeout SEC]" >&2; exit 2; }
+    agent="$1"; shift
+    set -- "$@" --wait
+    send_command "$agent" "$@"
+    ;;
+  wait)
+    [[ $# -ge 1 ]] || { echo "usage: ensemble-tmux wait MESSAGE_ID [--timeout SEC] [--interval SEC]" >&2; exit 2; }
+    message_id="$1"; shift
+    timeout=600
+    interval=5
     while [[ $# -gt 0 ]]; do
       case "$1" in
-        --from) FROM="${2:-}"; shift 2 ;;
-        --type) type="${2:-}"; shift 2 ;;
-        --no-wake) no_wake=1; shift ;;
-        --pane) pane="${2:-}"; shift 2 ;;
-        *) args+=("$1"); shift ;;
+        --timeout) timeout="${2:-600}"; shift 2 ;;
+        --interval) interval="${2:-5}"; shift 2 ;;
+        *) echo "unknown wait arg: $1" >&2; exit 2 ;;
       esac
     done
-    message="${args[*]}"
-    [[ -n "$message" ]] || { echo "message is required" >&2; exit 2; }
-    (cd "$ROOT" && ensemble send "$agent" "$message" --from "$FROM" --type "$type")
-    if [[ "$no_wake" != 1 ]]; then
-      wake_agent "$agent" --pane "$pane" --message "from $FROM [$type]"
-    fi
+    wait_for_reply "$message_id" "$timeout" "$interval"
     ;;
   note)
     [[ $# -ge 1 ]] || { echo "usage: ensemble-tmux note MESSAGE [--from NAME]" >&2; exit 2; }

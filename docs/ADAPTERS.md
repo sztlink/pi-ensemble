@@ -55,6 +55,17 @@ For tmux, wake text should be shell-safe. Prefix with `#` so accidental paste in
 
 Do not paste long instructions through tmux. Put them in the inbox.
 
+For tasks where silence is failure, the adapter should use a send+wake+wait pattern rather than a blind send:
+
+```bash
+examples/ensemble-tmux task claude-lead \
+  "Read inbox, do the review, and reply with result." \
+  --from pi \
+  --timeout 600
+```
+
+`task` writes the message, wakes the configured pane, includes a concrete `--reply-to` hint, and waits for a terminal reply (`result`, `ack`, `note`, or `done`) in `audit.jsonl`. If no reply arrives before timeout, the adapter exits non-zero. This keeps the core ledger passive while making runtime orchestration fail visibly.
+
 ## Pi adapter
 
 Install as a Pi package:
@@ -129,7 +140,7 @@ It does exactly two durable things:
 1. Writes the real message to `.pi-ensemble/` using the CLI.
 2. Pastes a short shell-safe wake prompt into the target pane.
 
-Example:
+Example fire-and-forget wake:
 
 ```bash
 examples/ensemble-tmux send claude-lead \
@@ -138,7 +149,16 @@ examples/ensemble-tmux send claude-lead \
   --type handoff
 ```
 
-This preserves the invariant: deleting the adapter still leaves the collaboration legible in `.pi-ensemble/`.
+Example supervised wake:
+
+```bash
+examples/ensemble-tmux task claude-lead \
+  "Please read your inbox and run the requested review; reply with result." \
+  --from pi \
+  --timeout 600
+```
+
+This preserves the invariant: deleting the adapter still leaves the collaboration legible in `.pi-ensemble/`. The wait loop only observes the same audit file that humans can read.
 
 ## Dashboard / observability adapters
 
