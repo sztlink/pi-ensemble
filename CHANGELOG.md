@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added agent lifecycle hygiene: `ensemble stale [--days N]` lists idle agents (activity inferred from the audit log); `ensemble retire AGENT... | --stale N [--dry-run]` archives an agent under `agents/.retired/`, releases its claims, and audits the operation. Nothing is deleted; retired names can be re-created by a new send.
+- `status`/`overview`/`doctor` now ignore dot-prefixed directories under `agents/` (infrastructure such as `.retired/`).
 - Added `--reply-to MESSAGE_ID` for `ensemble send`.
 - Actionable messages (`question`, `handoff`) now include reply hints in inbox markdown.
 - Terminal sends (`result`, `ack`, `note`) are not shown as open messages; terminal replies with `--reply-to` auto-close the parent message.

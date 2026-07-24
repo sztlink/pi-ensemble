@@ -18,7 +18,9 @@ import {
   readBoard,
   readInbox,
   release,
+  retire,
   send,
+  staleAgents,
   status,
   timeline,
 } from '../lib/core.mjs';
@@ -238,4 +240,44 @@ test('terminal result messages are not listed as open even without replyTo', () 
 
   assert.equal(messages(root).find(row => row.messageId === result.messageId)?.status, 'done');
   assert.equal(messages(root, { open: true }).length, 0);
+});
+
+test('staleAgents flags idle agents and spares active ones', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  send(root, { from: 'pi', to: 'ghost', type: 'handoff', body: 'old task' });
+
+  const stateFile = path.join(root, '.pi-ensemble', 'agents', 'ghost', 'state.json');
+  const old = new Date(Date.now() - 40 * 86_400_000).toISOString();
+  fs.writeFileSync(stateFile, JSON.stringify({ status: 'idle', task: null, since: old }, null, 2) + '\n');
+
+  const rows = staleAgents(root, { days: 30 });
+  assert.deepEqual(rows.map(row => row.agent), ['ghost']);
+  assert.equal(rows[0].pending, 1);
+  assert.ok(rows[0].idleDays >= 39);
+  assert.equal(staleAgents(root, { days: 60 }).length, 0);
+});
+
+test('retire archives the agent, releases its claims, and audits everything', () => {
+  const root = tempRoot();
+  init(root, { agent: 'pi' });
+  send(root, { from: 'pi', to: 'ghost', type: 'handoff', body: 'orphaned task' });
+  claim(root, { agent: 'ghost', targetPath: root });
+
+  const record = retire(root, { agent: 'ghost', by: 'pi', reason: 'idle namespace cleanup' });
+  assert.equal(record.pendingMessages, 1);
+  assert.deepEqual(record.releasedClaims, [path.resolve(root)]);
+  assert.ok(fs.existsSync(record.archivedTo));
+  assert.match(record.archivedTo, /\.retired/);
+
+  assert.equal(Object.keys(claims(root)).length, 0);
+  assert.ok(!status(root).agents.some(a => a.agent === 'ghost'));
+  const health = doctor(root);
+  assert.equal(health.ok, true);
+  assert.ok(readAudit(root, { limit: 0 }).some(r => r.action === 'retire' && r.agent === 'ghost'));
+  assert.ok(readAudit(root, { limit: 0 }).some(r => r.action === 'release' && r.via === 'retire'));
+
+  assert.throws(() => retire(root, { agent: 'ghost', by: 'pi' }), /Unknown agent/);
+  send(root, { from: 'pi', to: 'ghost', type: 'handoff', body: 'reborn' });
+  assert.equal(status(root).agents.find(a => a.agent === 'ghost')?.pending, 1);
 });

@@ -96,6 +96,9 @@ ensemble overview [--limit 10] [--json]
 ensemble doctor [--json]
 ensemble claim ./worktree-or-path [--agent pi] [--force] [--json]
 ensemble release ./worktree-or-path [--agent pi] [--force] [--json]
+ensemble stale [--days 30] [--json]
+ensemble retire ghost-agent [--by pi] [--reason "idle"] [--dry-run] [--json]
+ensemble retire --stale 30 [--dry-run] [--json]
 ```
 
 Allowed message types: `note`, `handoff`, `question`, `result`, `ack`.
@@ -103,6 +106,8 @@ Allowed message types: `note`, `handoff`, `question`, `result`, `ack`.
 Inbox reads update per-agent `lastReadAt`. Use `--since-last-read` for focused wakeups: it prints only new messages, marks them read, and keeps retained history in `inbox.md`. `overview` reports both total retained messages and unread counts.
 
 Use `ensemble doctor` when a workflow feels off: it checks required files, protocol version, audit log parse health, claims, agent names, inbox state, and nested `.pi-ensemble` folders that can cause root confusion.
+
+Agent identities accumulate: every one-off task that mints a named agent leaves an inbox behind, and pending messages of dead agents rot silently. `ensemble stale` lists idle agents (last activity inferred from the audit log, inbox reads, and registration time). `ensemble retire` archives an agent under `agents/.retired/`, releases its claims, and audits the whole operation — nothing is deleted, and sending to a retired name simply re-creates it fresh. Run `ensemble retire --stale 30 --dry-run` periodically to keep the namespace honest.
 
 Every `send` returns a message id and writes an inbox anchor like `{#msg_...}`. Actionable messages (`question`, `handoff`) include a reply hint in the inbox. Reply with `--reply-to msg_xxx`; terminal replies (`result`, `ack`, `note`) are treated as done and automatically close their parent message when `--reply-to` is present. Use explicit `ack` and `done` when you need manual traceability. These audit events do not schedule, route, or supervise agents.
 

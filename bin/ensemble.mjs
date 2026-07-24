@@ -15,7 +15,9 @@ import {
   readInbox,
   release,
   requireWorkspaceRoot,
+  retire,
   send,
+  staleAgents,
   status,
   timeline,
 } from '../lib/core.mjs';
@@ -40,6 +42,13 @@ Usage:
   ensemble doctor [--json]
   ensemble claim PATH [--agent NAME] [--force] [--json]
   ensemble release PATH [--agent NAME] [--force] [--json]
+  ensemble stale [--days N] [--json]                 # list idle agents (retire candidates)
+  ensemble retire AGENT... [--by NAME] [--reason TEXT] [--dry-run] [--json]
+  ensemble retire --stale N [--by NAME] [--reason TEXT] [--dry-run] [--json]
+
+Retire archives an agent (inbox, state) under agents/.retired/, releases its
+claims, and records everything in the audit log. Nothing is deleted; sending
+to a retired name re-creates it fresh.
 `);
 }
 
@@ -90,6 +99,11 @@ function formatOverview(value) {
   lines.push('recent:');
   for (const row of value.recent) lines.push(`  - ${row.ts ?? '?'} ${row.action ?? '?'} — ${row.summary}`);
   return lines.join('\n') + '\n';
+}
+
+function formatStale(rows) {
+  if (!rows.length) return 'no stale agents\n';
+  return rows.map(row => `${row.agent} — last active ${row.lastActiveAt || 'never'}${row.idleDays === null ? '' : ` (${row.idleDays}d idle)`}, ${row.pending} pending, ${row.claims.length} claim(s)`).join('\n') + '\n';
 }
 
 function formatMessages(rows) {
@@ -208,6 +222,31 @@ try {
     const targetPath = args.join(' ');
     const result = release(root(), { agent, targetPath, force });
     json ? printJson(result) : console.log(`released ${targetPath}`);
+  } else if (cmd === 'stale') {
+    const json = hasFlag(args, '--json');
+    const days = Number(takeFlag(args, '--days', '30'));
+    const result = staleAgents(root(), { days: Number.isFinite(days) ? days : 30 });
+    json ? printJson(result) : process.stdout.write(formatStale(result));
+  } else if (cmd === 'retire') {
+    const by = takeFlag(args, '--by', defaultAgent());
+    const reason = takeFlag(args, '--reason', '');
+    const staleDays = takeFlag(args, '--stale', undefined);
+    const dryRun = hasFlag(args, '--dry-run');
+    const json = hasFlag(args, '--json');
+    let targets = [...args];
+    if (staleDays !== undefined) {
+      const days = Number(staleDays);
+      if (!Number.isFinite(days) || days <= 0) throw new Error('--stale requires a positive number of days');
+      targets = staleAgents(root(), { days }).map(row => row.agent);
+    }
+    if (!targets.length) {
+      console.log(staleDays !== undefined ? 'nothing to retire' : 'no agents given (use AGENT... or --stale N)');
+    } else if (dryRun) {
+      json ? printJson({ dryRun: true, targets }) : console.log(`would retire ${targets.length} agent(s): ${targets.join(', ')}`);
+    } else {
+      const results = targets.map(agent => retire(root(), { agent, by, reason }));
+      json ? printJson(results) : results.forEach(r => console.log(`retired ${r.agent} (${r.pendingMessages} pending archived, ${r.releasedClaims.length} claim(s) released) → ${r.archivedTo}`));
+    }
   } else {
     usage();
     process.exitCode = 2;

@@ -28,9 +28,13 @@ A local, file-based coordination protocol for parallel coding agents operated by
       inbox.md
       inbox.read.md  # created lazily on first cleared inbox read
       state.json
+    .retired/
+      <name>.<timestamp>/  # archived by `ensemble retire`; ignored by status/overview
   worktrees.json
   audit.jsonl
 ```
+
+Directories under `agents/` whose name starts with a dot are infrastructure and are never listed as agents.
 
 ## Agent names
 
@@ -87,6 +91,13 @@ Each agent has `state.json`. `lastReadAt` is updated whenever that agent reads i
 ```
 
 A path claimed by another agent cannot be overwritten or released unless the caller uses a force override. Overrides are audited and keep the previous owner in the audit record.
+
+## Agent retirement
+
+Agent identities are cheap to create and were historically never removed, which inflates the namespace and leaves pending messages rotting in inboxes nobody reads. Two operations address this:
+
+- `staleAgents` / `ensemble stale [--days N]` — read-only scan. Last activity per agent is the most recent of: audit events the agent authored (`send`, `note`, `ack`, `done`, `claim`, `release`, `inbox_read`, `inbox_clear`, `init`, retirement it performed), its `lastReadAt`, and its registration time (`state.json` `since`). Being the *recipient* of a message is not activity.
+- `retire` / `ensemble retire AGENT... | --stale N` — moves `agents/<name>/` to `agents/.retired/<name>.<timestamp>/` (inbox and state preserved, nothing deleted), force-releases every claim owned by the agent (each release audited with `via: "retire"`), and appends a `retire` audit event recording who retired it, the count of pending messages archived, and the released claims. Sending to a retired name re-creates the agent fresh — retirement archives an identity's residue; it does not ban the name.
 
 ## Root resolution
 
